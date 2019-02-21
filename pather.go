@@ -225,7 +225,7 @@ func ParseWorldFromRequest(request GameRequest) World {
 
 	w := World{}
 	for x := 0; x < grid_size; x++ {
-		for y := 0; x < grid_size; x++ {
+		for y := 0; y < grid_size; y++ {
 			w.SetTile(&Tile{
 				Kind: KindPlain,
 			}, x, y)
