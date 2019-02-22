@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 )
 
@@ -233,14 +232,14 @@ func ParseWorldFromRequest(request GameRequest) World {
 		}
 	}
 
-	// for _, snake := range request.Board.Snakes {
-	// 	fmt.Println(snake)
-	// 	for _, coord := range snake.Body {
-	// 		w.SetTile(&Tile{
-	// 			Kind: KindBlocker,
-	// 		}, coord.X, coord.Y)
-	// 	}
-	// }
+	for _, snake := range request.Board.Snakes {
+		fmt.Println(snake)
+		for _, coord := range snake.Body {
+			w.SetTile(&Tile{
+				Kind: KindBlocker,
+			}, coord.X, coord.Y)
+		}
+	}
 
 	for i, coord := range request.You.Body {
 		if i == 0 {
@@ -266,14 +265,6 @@ func ParseWorldFromRequest(request GameRequest) World {
 // doesn't work properly yet - organizing world in random order by accident
 func PrintWorld(f func(...interface{}), w World) {
 	testres := []string{}
-	result := "\n"
-	// for k, v := range w {
-	// 	testres = append(testres, "")
-	// 	for _, value := range w {
-	// 		testres
-	// 	}
-	// }
-
 	for i := 0; i < len(w); i++ {
 		testres = append(testres, "")
 		for j := 0; j < len(w); j++ {
@@ -282,11 +273,46 @@ func PrintWorld(f func(...interface{}), w World) {
 	}
 	for _, v := range w {
 		for _, value := range v {
-			result = result + " " + strconv.Itoa(value.Kind)
+			testres[value.X] = replaceAtIndex(
+				testres[value.X],
+				KindRunes[value.Kind],
+				value.Y,
+			)
 		}
-		result = result + "\n"
 	}
-	f(result)
+	stringResult := strings.Join(testres, "\n")
+	f("\n" + stringResult)
+}
+
+func PrintFindMove(f func(...interface{}), g GameRequest) {
+	world := ParseWorldFromRequest(g)
+	p, _, found := Path(world.From(), world.To())
+	if !found {
+		f("Could not find a path")
+	} else {
+		f("Resulting path\n", world.RenderPath(p))
+	}
+}
+
+func FindMove(g GameRequest) string {
+	world := ParseWorldFromRequest(g)
+	p, _, found := Path(world.From(), world.To())
+	if found {
+		head := Coord{
+			X: world.From().X,
+			Y: world.From().Y,
+		}
+		move := ParseMove(head, p)
+		// return move
+		return move
+	}
+	return "right"
+}
+
+func replaceAtIndex(in string, r rune, i int) string {
+	out := []rune(in)
+	out[i] = r
+	return string(out)
 }
 
 // directions = {(0, -1) : 'left', (0, 1) : 'right', (-1, 0) : 'up', (1, 0) : 'down'}

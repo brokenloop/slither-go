@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -41,17 +40,6 @@ type GameRequest struct {
 	You   Snake
 }
 
-func FindMove(g GameRequest) {
-	world := ParseWorldFromRequest(g)
-	p, _, found := Path(world.From(), world.To())
-	if !found {
-		fmt.Println("Could not find a path")
-	} else {
-		fmt.Println("Resulting path\n", world.RenderPath(p))
-	}
-
-}
-
 func PingHandler(w http.ResponseWriter, r *http.Request) {
 	returnString := "ssssSSsssSsSSSsssSSSSSssssSSss"
 	json.NewEncoder(w).Encode(returnString)
@@ -65,14 +53,32 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	b, err := json.MarshalIndent(input, "", "  ")
-	fmt.Println(b)
+	// b, err := json.MarshalIndent(input, "", "  ")
+	// fmt.Println(b)
 	spew.Dump(input)
 
-	// FindMove(input)
+	response := make(map[string]string)
+
+	response["responscolor"] = "#ff00ff"
+	response["headType"] = "bendr"
+	response["tailType"] = "pixel"
+
+	json.NewEncoder(w).Encode(response)
 }
 
 func MoveHandler(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+	var input GameRequest
+	err := decoder.Decode(&input)
+	if err != nil {
+		panic(err)
+	}
+	// spew.Dump(input)
+	move := FindMove(input)
+	spew.Dump(move)
+	response := make(map[string]string)
+	response["move"] = move
+	json.NewEncoder(w).Encode(response)
 }
 
 func EndHandler(w http.ResponseWriter, r *http.Request) {
