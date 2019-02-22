@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"testing"
 )
 
@@ -14,9 +15,9 @@ var testRequest = GameRequest{
 	},
 	Turn: 0,
 	Board: Board{
-		Height: 5,
-		Width:  5,
-		Food:   []Coord{Coord{X: 4, Y: 4}},
+		Height: 10,
+		Width:  10,
+		Food:   []Coord{Coord{X: 5, Y: 5}},
 		Snakes: []Snake{},
 	},
 	You: Snake{
@@ -43,11 +44,20 @@ func TestParseWorldFromRequest(t *testing.T) {
 	if fromTile.X != expectedFrom.X || fromTile.Y != expectedFrom.Y {
 		t.Errorf("Fromtile incorrectly set. got [%d, %d], wanted [%d, %d]", fromTile.X, fromTile.Y, expectedFrom.X, expectedFrom.Y)
 	}
-	// out, err := json.Marshal(world)
+	PrintWorld(t.Log, world)
+	// out, _ := json.Marshal(world)
 	// if err != nil {
 	// 	panic(err)
 	// }
 	// stringWorld := string(out)
-	// t.Logf("")
-	t.Logf("world looks like following \n %v", world)
+	// t.Logf(stringWorld)
+	//t.Logf("world looks like following \n %v", world)
+}
+
+func TestJsonMarshal(t *testing.T) {
+	res, err := json.Marshal(testRequest)
+	if err != nil {
+		panic(err)
+	}
+	t.Logf(string(res))
 }

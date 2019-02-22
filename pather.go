@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -232,14 +233,14 @@ func ParseWorldFromRequest(request GameRequest) World {
 		}
 	}
 
-	for _, snake := range request.Board.Snakes {
-		fmt.Println(snake)
-		for _, coord := range snake.Body {
-			w.SetTile(&Tile{
-				Kind: KindBlocker,
-			}, coord.X, coord.Y)
-		}
-	}
+	// for _, snake := range request.Board.Snakes {
+	// 	fmt.Println(snake)
+	// 	for _, coord := range snake.Body {
+	// 		w.SetTile(&Tile{
+	// 			Kind: KindBlocker,
+	// 		}, coord.X, coord.Y)
+	// 	}
+	// }
 
 	for i, coord := range request.You.Body {
 		if i == 0 {
@@ -254,12 +255,38 @@ func ParseWorldFromRequest(request GameRequest) World {
 	}
 
 	// setting goal as first food for testing
-	goal_coord := request.Board.Food[0]
+	goalCoord := request.Board.Food[0]
 	w.SetTile(&Tile{
 		Kind: KindTo,
-	}, goal_coord.X, goal_coord.Y)
+	}, goalCoord.X, goalCoord.Y)
 
 	return w
+}
+
+// doesn't work properly yet - organizing world in random order by accident
+func PrintWorld(f func(...interface{}), w World) {
+	testres := []string{}
+	result := "\n"
+	// for k, v := range w {
+	// 	testres = append(testres, "")
+	// 	for _, value := range w {
+	// 		testres
+	// 	}
+	// }
+
+	for i := 0; i < len(w); i++ {
+		testres = append(testres, "")
+		for j := 0; j < len(w); j++ {
+			testres[i] = testres[i] + "0"
+		}
+	}
+	for _, v := range w {
+		for _, value := range v {
+			result = result + " " + strconv.Itoa(value.Kind)
+		}
+		result = result + "\n"
+	}
+	f(result)
 }
 
 // directions = {(0, -1) : 'left', (0, 1) : 'right', (-1, 0) : 'up', (1, 0) : 'down'}
