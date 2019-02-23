@@ -71,6 +71,9 @@ type Tile struct {
 // PathNeighbors returns the neighbors of the tile, excluding blockers and
 // tiles off the edge of the board.
 func (t *Tile) PathNeighbors() []Pather {
+	// fmt.Println("\nTile")
+	// fmt.Println("Kind", t.Kind)
+	// fmt.Println("Coords", t.X, t.Y)
 	neighbors := []Pather{}
 	for _, offset := range [][]int{
 		{-1, 0},
@@ -181,9 +184,14 @@ func (w World) RenderPath(path []Pather) string {
 }
 
 func ParseMove(head Coord, path []Pather) string {
-	p := path[0]
+
+	p := path[len(path)-2]
 	pT := p.(*Tile)
-	var direction = [2]int{head.X - pT.X, head.Y - pT.Y}
+	fmt.Println("MOVES")
+	fmt.Println(head)
+	fmt.Println(pT.X, pT.Y)
+	var direction = [2]int{pT.X - head.X, pT.Y - head.Y}
+	fmt.Printf("DIRECTION: %v", direction)
 	return MoveMap(direction)
 }
 
@@ -196,11 +204,11 @@ func MoveMap(direction [2]int) string {
 			return "left"
 		}
 	} else if direction[0] == 1 {
-		return "up"
-	} else {
 		return "down"
+	} else {
+		return "up"
 	}
-	return "down"
+	return "right"
 }
 
 // ParseWorld parses a textual representation of a world into a world map.
@@ -220,6 +228,7 @@ func ParseWorld(input string) World {
 	return w
 }
 
+// Have to encode the world using {y, x} because requests come in the opposite orientation
 func ParseWorldFromRequest(request GameRequest) World {
 	var grid_size = request.Board.Width
 
@@ -228,7 +237,7 @@ func ParseWorldFromRequest(request GameRequest) World {
 		for y := 0; y < grid_size; y++ {
 			w.SetTile(&Tile{
 				Kind: KindPlain,
-			}, x, y)
+			}, y, x)
 		}
 	}
 
@@ -237,33 +246,40 @@ func ParseWorldFromRequest(request GameRequest) World {
 		for _, coord := range snake.Body {
 			w.SetTile(&Tile{
 				Kind: KindBlocker,
-			}, coord.X, coord.Y)
+			}, coord.Y, coord.X)
 		}
 	}
 
+	// marking body
 	for i, coord := range request.You.Body {
-		if i == 0 {
-			w.SetTile(&Tile{
-				Kind: KindFrom,
-			}, coord.X, coord.Y)
-		} else {
+		if i != 0 {
+			// 	w.SetTile(&Tile{
+			// 		Kind: KindFrom,
+			// 	}, coord.X, coord.Y)
+			// } else {
 			w.SetTile(&Tile{
 				Kind: KindBlocker,
-			}, coord.X, coord.Y)
+			}, coord.Y, coord.X)
 		}
 	}
+
+	//marking head
+	coord := request.You.Body[0]
+	w.SetTile(&Tile{
+		Kind: KindFrom,
+	}, coord.Y, coord.X)
 
 	// setting goal as first food for testing
 	goalCoord := request.Board.Food[0]
 	w.SetTile(&Tile{
 		Kind: KindTo,
-	}, goalCoord.X, goalCoord.Y)
+	}, goalCoord.Y, goalCoord.X)
 
 	return w
 }
 
-// doesn't work properly yet - organizing world in random order by accident
 func PrintWorld(f func(...interface{}), w World) {
+	// func PrintWorld(f func(string, ...interface{}), w World) {
 	testres := []string{}
 	for i := 0; i < len(w); i++ {
 		testres = append(testres, "")
@@ -284,6 +300,28 @@ func PrintWorld(f func(...interface{}), w World) {
 	f("\n" + stringResult)
 }
 
+func StringifyWorld(w World) string {
+	// func PrintWorld(f func(string, ...interface{}), w World) {
+	testres := []string{}
+	for i := 0; i < len(w); i++ {
+		testres = append(testres, "")
+		for j := 0; j < len(w); j++ {
+			testres[i] = testres[i] + "0"
+		}
+	}
+	for _, v := range w {
+		for _, value := range v {
+			testres[value.X] = replaceAtIndex(
+				testres[value.X],
+				KindRunes[value.Kind],
+				value.Y,
+			)
+		}
+	}
+	stringResult := strings.Join(testres, "\n")
+	return (stringResult)
+}
+
 func PrintFindMove(f func(...interface{}), g GameRequest) {
 	world := ParseWorldFromRequest(g)
 	p, _, found := Path(world.From(), world.To())
@@ -296,6 +334,8 @@ func PrintFindMove(f func(...interface{}), g GameRequest) {
 
 func FindMove(g GameRequest) string {
 	world := ParseWorldFromRequest(g)
+	fmt.Println("\nworld")
+	fmt.Printf(StringifyWorld(world))
 	p, _, found := Path(world.From(), world.To())
 	if found {
 		head := Coord{

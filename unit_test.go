@@ -82,6 +82,32 @@ func TestFindMove(t *testing.T) {
 
 // }
 
+// directions = {(0, -1) : 'left', (0, 1) : 'right', (-1, 0) : 'up', (1, 0) : 'down'}
+func TestMoveMap(t *testing.T) {
+
+	up := [2]int{-1, 0}
+	down := [2]int{1, 0}
+	left := [2]int{0, -1}
+	right := [2]int{0, 1}
+
+	upresponse := MoveMap(up)
+	if upresponse != "up" {
+		t.Errorf("expected up got %v", upresponse)
+	}
+	downresponse := MoveMap(down)
+	if downresponse != "down" {
+		t.Errorf("expected down got %v", downresponse)
+	}
+	leftresponse := MoveMap(left)
+	if leftresponse != "left" {
+		t.Errorf("expected left got %v", leftresponse)
+	}
+	rightresponse := MoveMap(right)
+	if rightresponse != "right" {
+		t.Errorf("expected right got %v", rightresponse)
+	}
+}
+
 func TestJsonMarshal(t *testing.T) {
 	res, err := json.Marshal(testRequest)
 	if err != nil {
