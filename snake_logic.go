@@ -222,7 +222,7 @@ func FindMove(g GameRequest) string {
 	move := ""
 	health := g.You.Health
 	fmt.Println("HEALTH %v", health)
-	if health > 100 {
+	if health > 50 {
 		foundMove, move = ScaredyMove(world, g)
 		if foundMove {
 			return move
