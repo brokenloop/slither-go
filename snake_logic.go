@@ -138,16 +138,50 @@ func FlipCoords(coord Coord) Coord {
 func TrappingMove(w World, g GameRequest, c Coord) bool {
 	flippedC := FlipCoords(c)
 	availableSpace := FloodFill(w, flippedC)
-	fmt.Println("\nCHECKING FOR TRAPS")
-	fmt.Println(c)
-	fmt.Println(availableSpace)
+	// fmt.Println("\nCHECKING FOR TRAPS")
+	// fmt.Println(c)
+	// fmt.Println(availableSpace)
 
 	return availableSpace < len(g.You.Body)
 }
 
-// func IdleMove(g GameRequest) bool, string {
+func IdleMove(w World, g GameRequest) (bool, string) {
+	fmt.Println("\nIDLE MOVE")
+	headTile := w.From()
+	head := Coord{
+		X: headTile.X,
+		Y: headTile.Y,
+	}
+	neighbors := headTile.PathNeighbors()
 
-// }
+	if len(neighbors) > 0 {
+		largestSpace := 0
+		firstOption := neighbors[0].(*Tile)
+		bestMove := Coord{X: firstOption.X, Y: firstOption.Y}
+		for i := 0; i < len(neighbors); i++ {
+			neighbor := neighbors[i]
+
+			nT := neighbor.(*Tile)
+			moveCoord := Coord{X: nT.X, Y: nT.Y}
+
+			if TileSafe(moveCoord, g) {
+				flippedC := FlipCoords(moveCoord)
+				availableSpace := FloodFill(w, flippedC)
+				fmt.Println("Move: ", moveCoord)
+				fmt.Println("Available space: ", availableSpace)
+				if availableSpace > largestSpace {
+					largestSpace = availableSpace
+					bestMove = moveCoord
+				}
+			}
+		}
+
+		move := ParseMove(head, bestMove)
+		return true, move
+	}
+	fmt.Println("DEAD END")
+	return false, "right"
+}
 
 // Try to eat food
 func HungryMove(world World, g GameRequest) (bool, string) {
@@ -232,5 +266,10 @@ func FindMove(g GameRequest) string {
 	if foundMove {
 		return move
 	}
+	foundMove, move = IdleMove(world, g)
+	if foundMove {
+		return move
+	}
+	// is this needed?
 	return LastResort(world, g)
 }
