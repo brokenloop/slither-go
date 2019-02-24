@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strconv"
 	"strings"
 )
 
@@ -41,6 +42,10 @@ func (w World) SetGoal(g Coord) {
 	w.SetTile(&Tile{
 		Kind: KindTo,
 	}, g.Y, g.X)
+}
+
+func (w World) IsEmpty(g Coord) bool {
+	return w.Tile(g.Y, g.X).Kind == KindPlain
 }
 
 // Sets the tile at g to plain
@@ -133,4 +138,44 @@ func ManhattanDistance(c1 Coord, c2 Coord) int {
 		absY = -absY
 	}
 	return absX + absY
+}
+
+func FloodFill(world World, c Coord) int {
+	// deepcopy of world so as not to affect the world the game is using
+	w := world
+	visited := make(map[string]bool)
+	fromTile := w.FirstOfKind(KindFrom)
+
+	if fromTile != nil {
+		tileKey := strconv.Itoa(fromTile.X) + strconv.Itoa(fromTile.Y)
+		visited[tileKey] = true
+		// w.SetTile(&Tile{
+		// 	Kind: KindBlocker,
+		// }, fromTile.X, fromTile.Y)
+	}
+	return FloodFillUtil(visited, w, c)
+}
+
+func FloodFillUtil(visited map[string]bool, w World, c Coord) int {
+	tile := w.Tile(c.Y, c.X)
+	tileKey := strconv.Itoa(tile.X) + strconv.Itoa(tile.Y)
+	neighbors := tile.PathNeighbors()
+	// checking if tile has been visited
+	if _, ok := visited[tileKey]; ok {
+		return 0
+	}
+	// if len(neighbors) == 0 {
+	// 	return 0
+	// }
+	// w.SetTile(&Tile{
+	// 	Kind: KindBlocker,
+	// }, c.Y, c.X)
+	result := 1
+	visited[tileKey] = true
+	for i := 0; i < len(neighbors); i++ {
+		neighbor := neighbors[i].(*Tile)
+		neighborCoord := Coord{X: neighbor.Y, Y: neighbor.X}
+		result = result + FloodFillUtil(visited, w, neighborCoord)
+	}
+	return result
 }

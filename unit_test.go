@@ -1,7 +1,6 @@
 package main
 
 import (
-	"strconv"
 	"testing"
 )
 
@@ -47,14 +46,25 @@ func TestParseWorldFromRequest(t *testing.T) {
 	PrintWorld(t.Log, world)
 }
 
-func TestFindMove(t *testing.T) {
-	expectedMove := "down"
-	move := FindMove(testRequest)
-	if move != expectedMove {
-		t.Errorf("Incorrect move. Got %v, expected %v", move, expectedMove)
-	}
-}
+// func TestFindMove(t *testing.T) {
+// 	expectedMove := "down"
+// 	move := FindMove(testRequest)
+// 	if move != expectedMove {
+// 		t.Errorf("Incorrect move. Got %v, expected %v", move, expectedMove)
+// 	}
+// }
 
+// func TestParseMove(t *testing.T) {
+// 	world := ParseWorldFromRequest(testRequest)
+// 	p, _, _ := Path(world.From(), world.To())
+// 	from := Coord{
+// 		world.From().X,
+// 		world.From().Y,
+// 	}
+
+// }
+
+// directions = {(0, -1) : 'left', (0, 1) : 'right', (-1, 0) : 'up', (1, 0) : 'down'}
 func TestMoveMap(t *testing.T) {
 
 	up := [2]int{-1, 0}
@@ -123,9 +133,71 @@ func TestSortByDistance(t *testing.T) {
 	}
 	result := SortByDistance(testInput)
 	for i := 1; i < len(result); i++ {
-		t.Logf(strconv.Itoa(result[i].Dist))
+		// t.Logf(strconv.Itoa(result[i].Dist))
 		if result[i].Dist < result[i-1].Dist {
 			t.Errorf("Sort failed")
+		}
+	}
+}
+
+type FloodFillTestMap struct {
+	Map           string
+	Coord         Coord
+	ExpectedValue int
+}
+
+func TestFloodFill(t *testing.T) {
+	mapList := []FloodFillTestMap{
+		FloodFillTestMap{
+			Map: `
+.....
+.....
+.....
+.....
+.....`,
+			Coord:         Coord{X: 0, Y: 0},
+			ExpectedValue: 25,
+		},
+		FloodFillTestMap{
+			Map: `
+.....
+XXX..
+..X..
+..X..
+..X..`,
+			Coord:         Coord{X: 2, Y: 0},
+			ExpectedValue: 6,
+		},
+		FloodFillTestMap{
+			Map: `
+.X...
+.X...
+.X...
+FX...
+.....`,
+			Coord:         Coord{X: 0, Y: 0},
+			ExpectedValue: 3,
+		},
+		FloodFillTestMap{
+			Map: `
+.......
+....XXX
+....F.X
+.....XX
+.XX.XX.
+.XXXX..
+.......`,
+			Coord:         Coord{X: 2, Y: 5},
+			ExpectedValue: 1,
+		},
+	}
+
+	for i := 0; i < len(mapList); i++ {
+		testMap := mapList[i]
+		world := ParseWorld(testMap.Map)
+		value := FloodFill(world, testMap.Coord)
+		if value != testMap.ExpectedValue {
+			t.Errorf("Floodfill error: expected %v, got %v", testMap.ExpectedValue, value)
 		}
 	}
 }

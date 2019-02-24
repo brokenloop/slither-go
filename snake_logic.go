@@ -81,7 +81,7 @@ func PrintFindMove(f func(...interface{}), g GameRequest) {
 }
 
 func LastResort(w World) string {
-	fmt.Println("LAST RESORT")
+	fmt.Println("\nLAST RESORT")
 	headTile := w.From()
 	head := Coord{
 		X: headTile.X,
@@ -123,8 +123,23 @@ func FlipCoords(coord Coord) Coord {
 	return Coord{X: coord.Y, Y: coord.X}
 }
 
-func FindMove(g GameRequest) string {
-	world := ParseWorldFromRequest(g)
+func TrappingMove(w World, g GameRequest, c Coord) bool {
+	flippedC := FlipCoords(c)
+	availableSpace := FloodFill(w, flippedC)
+	fmt.Println("\nCHECKING FOR TRAPS")
+	fmt.Println(c)
+	fmt.Println(availableSpace)
+
+	return availableSpace < len(g.You.Body)
+}
+
+// func IdleMove(g GameRequest) bool, string {
+
+// }
+
+// Try to eat food
+func HungryMove(world World, g GameRequest) (bool, string) {
+	foundMove := false
 	head := g.You.Body[0]
 	foodList := ListFoodDistances(head, g.Board.Food)
 	foodList = SortByDistance(foodList)
@@ -139,17 +154,67 @@ func FindMove(g GameRequest) string {
 				X: world.From().X,
 				Y: world.From().Y,
 			}
-			// if FoodSafe(head, g) {
 			cutPath := p[len(p)-2]
 			moveTile := cutPath.(*Tile)
 			moveCoord := Coord{X: moveTile.X, Y: moveTile.Y}
-			if TileSafe(moveCoord, g) {
+			if TileSafe(moveCoord, g) && !TrappingMove(world, g, moveCoord) {
+				fmt.Println("SAFE MOVE")
 				move := ParseMove(head, moveCoord)
-				return move
+				foundMove = true
+				return foundMove, move
 			}
-			// }
 		}
 		world.StripGoal(goalCoord)
+	}
+	return foundMove, ""
+}
+
+// Chase own tail
+func ScaredyMove(world World, g GameRequest) (bool, string) {
+	foundMove := false
+	tail := g.You.Body[len(g.You.Body)-1]
+
+	// if head and tail are on same tile, default to something else
+	// only relevent for first move
+	if !world.IsEmpty(tail) {
+		return foundMove, ""
+	}
+
+	// tail = FlipCoords(tail)
+	fmt.Printf("TAILCOORD %v", tail)
+	world.SetGoal(tail)
+	fmt.Println()
+	fmt.Printf(StringifyWorld(world))
+	p, _, found := Path(world.From(), world.To())
+	world.StripGoal(tail)
+	if found {
+		head := Coord{
+			X: world.From().X,
+			Y: world.From().Y,
+		}
+		cutPath := p[len(p)-2]
+		moveTile := cutPath.(*Tile)
+		moveCoord := Coord{X: moveTile.X, Y: moveTile.Y}
+		if TileSafe(moveCoord, g) {
+			move := ParseMove(head, moveCoord)
+			foundMove = true
+			return foundMove, move
+		}
+	}
+	return foundMove, ""
+}
+
+func FindMove(g GameRequest) string {
+	world := ParseWorldFromRequest(g)
+	foundMove := false
+	move := ""
+	foundMove, move = HungryMove(world, g)
+	if foundMove {
+		return move
+	}
+	foundMove, move = ScaredyMove(world, g)
+	if foundMove {
+		return move
 	}
 	return LastResort(world)
 }
