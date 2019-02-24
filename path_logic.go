@@ -71,14 +71,24 @@ func (w World) StripGoal(g Coord) {
 	}, g.Y, g.X)
 }
 
-func ParseMove(head Coord, path []Pather) string {
+// func ParseMove(head Coord, path []Pather) string {
 
-	p := path[len(path)-2]
-	pT := p.(*Tile)
-	fmt.Println("MOVES")
+// 	p := path[len(path)-2]
+// 	pT := p.(*Tile)
+// 	fmt.Println("MOVES")
+// 	fmt.Println(head)
+// 	fmt.Println(pT.X, pT.Y)
+// 	var direction = [2]int{pT.X - head.X, pT.Y - head.Y}
+// 	fmt.Printf("DIRECTION: %v", direction)
+// 	return MoveMap(direction)
+// }
+
+func ParseMove(head Coord, moveCoord Coord) string {
+
+	fmt.Println("\n\nMOVES")
 	fmt.Println(head)
-	fmt.Println(pT.X, pT.Y)
-	var direction = [2]int{pT.X - head.X, pT.Y - head.Y}
+	fmt.Println(moveCoord.X, moveCoord.Y)
+	var direction = [2]int{moveCoord.X - head.X, moveCoord.Y - head.Y}
 	fmt.Printf("DIRECTION: %v", direction)
 	return MoveMap(direction)
 }

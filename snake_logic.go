@@ -80,6 +80,30 @@ func PrintFindMove(f func(...interface{}), g GameRequest) {
 	}
 }
 
+func LastResort(w World) string {
+	fmt.Println("\n\n\nLAST RESORT")
+	// headTile := w[head.Y][head.X]
+	headTile := w.From()
+	head := Coord{
+		X: headTile.X,
+		Y: headTile.Y,
+	}
+	neighbors := headTile.PathNeighbors()
+	if len(neighbors) > 0 {
+		neighbor := neighbors[0]
+		nT := neighbor.(*Tile)
+		// coords are swapped because of world mapping
+		moveCoord := Coord{X: nT.X, Y: nT.Y}
+		fmt.Printf("Head coord: %d\n", head)
+		fmt.Printf("Move coord: %d\n", moveCoord)
+
+		move := ParseMove(head, moveCoord)
+		return move
+	}
+	fmt.Println("\nDead end!")
+	return "right"
+}
+
 func FindMove(g GameRequest) string {
 	world := ParseWorldFromRequest(g)
 	head := g.You.Body[0]
@@ -96,10 +120,12 @@ func FindMove(g GameRequest) string {
 				X: world.From().X,
 				Y: world.From().Y,
 			}
-			move := ParseMove(head, p)
+			cutPath := p[len(p)-2]
+			moveTile := cutPath.(*Tile)
+			moveCoord := Coord{X: moveTile.X, Y: moveTile.Y}
+			move := ParseMove(head, moveCoord)
 			return move
 		}
 	}
-
-	return "right"
+	return LastResort(world)
 }
