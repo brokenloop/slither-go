@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	"strconv"
 	"testing"
 )
 
@@ -17,7 +17,7 @@ var testRequest = GameRequest{
 	Board: Board{
 		Height: 10,
 		Width:  10,
-		Food:   []Coord{Coord{X: 9, Y: 9}},
+		Food:   []Coord{Coord{X: 9, Y: 9}, Coord{X: 0, Y: 5}, Coord{X: 7, Y: 8}},
 		Snakes: []Snake{
 			Snake{
 				Id:    "themsnakeid",
@@ -35,13 +35,6 @@ var testRequest = GameRequest{
 	},
 }
 
-func TestSum(t *testing.T) {
-	total := Sum(5, 5)
-	if total != 10 {
-		t.Errorf("Sum was incorrect, got: %d, want: %d.", total, 10)
-	}
-}
-
 func TestParseWorldFromRequest(t *testing.T) {
 	world := ParseWorldFromRequest(testRequest)
 	fromTile := world.From()
@@ -54,16 +47,6 @@ func TestParseWorldFromRequest(t *testing.T) {
 	PrintWorld(t.Log, world)
 }
 
-func TestPrintFindMove(t *testing.T) {
-	world := ParseWorldFromRequest(testRequest)
-	p, _, found := Path(world.From(), world.To())
-	if !found {
-		t.Log("Could not find a path")
-	} else {
-		t.Log("Resulting path\n", world.RenderPath(p))
-	}
-}
-
 func TestFindMove(t *testing.T) {
 	expectedMove := "down"
 	move := FindMove(testRequest)
@@ -72,17 +55,6 @@ func TestFindMove(t *testing.T) {
 	}
 }
 
-// func TestParseMove(t *testing.T) {
-// 	world := ParseWorldFromRequest(testRequest)
-// 	p, _, _ := Path(world.From(), world.To())
-// 	from := Coord{
-// 		world.From().X,
-// 		world.From().Y,
-// 	}
-
-// }
-
-// directions = {(0, -1) : 'left', (0, 1) : 'right', (-1, 0) : 'up', (1, 0) : 'down'}
 func TestMoveMap(t *testing.T) {
 
 	up := [2]int{-1, 0}
@@ -108,10 +80,52 @@ func TestMoveMap(t *testing.T) {
 	}
 }
 
-func TestJsonMarshal(t *testing.T) {
-	res, err := json.Marshal(testRequest)
-	if err != nil {
-		panic(err)
+func TestManhattanDistance(t *testing.T) {
+	c1 := Coord{0, 0}
+	c2 := Coord{5, 5}
+	dist := ManhattanDistance(c1, c2)
+	expectedDist := 10
+	if dist != expectedDist {
+		t.Errorf("Expected %v, got %v", expectedDist, dist)
 	}
-	t.Logf(string(res))
+}
+
+func TestFindClosestFood(t *testing.T) {
+	expectedResult := testRequest.Board.Food[1]
+	result := FindClosestFood(testRequest)
+	if result != expectedResult {
+		t.Errorf("Expected %v, got %v", expectedResult, result)
+	}
+}
+
+func TestSortByDistance(t *testing.T) {
+	testInput := []Destination{
+		Destination{
+			Dist: 8,
+			Loc:  Coord{X: 0, Y: 0},
+		},
+		Destination{
+			Dist: 1,
+			Loc:  Coord{X: 0, Y: 0},
+		},
+		Destination{
+			Dist: 27,
+			Loc:  Coord{X: 0, Y: 0},
+		},
+		Destination{
+			Dist: 4,
+			Loc:  Coord{X: 0, Y: 0},
+		},
+		Destination{
+			Dist: 16,
+			Loc:  Coord{X: 0, Y: 0},
+		},
+	}
+	result := SortByDistance(testInput)
+	for i := 1; i < len(result); i++ {
+		t.Logf(strconv.Itoa(result[i].Dist))
+		if result[i].Dist < result[i-1].Dist {
+			t.Errorf("Sort failed")
+		}
+	}
 }
