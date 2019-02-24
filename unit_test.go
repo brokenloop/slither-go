@@ -19,18 +19,18 @@ var testRequest = GameRequest{
 		Food:   []Coord{Coord{X: 9, Y: 9}, Coord{X: 0, Y: 5}, Coord{X: 7, Y: 8}},
 		Snakes: []Snake{
 			Snake{
-				Id:    "themsnakeid",
-				Name:  "themsnakename",
-				Heath: 100,
-				Body:  []Coord{Coord{X: 3, Y: 3}, Coord{X: 3, Y: 2}, Coord{X: 3, Y: 1}},
+				Id:     "themsnakeid",
+				Name:   "themsnakename",
+				Health: 100,
+				Body:   []Coord{Coord{X: 3, Y: 3}, Coord{X: 3, Y: 2}, Coord{X: 3, Y: 1}},
 			},
 		},
 	},
 	You: Snake{
-		Id:    "yousnakeid",
-		Name:  "yousnakename",
-		Heath: 100,
-		Body:  []Coord{Coord{X: 0, Y: 0}},
+		Id:     "yousnakeid",
+		Name:   "yousnakename",
+		Health: 100,
+		Body:   []Coord{Coord{X: 0, Y: 0}},
 	},
 }
 

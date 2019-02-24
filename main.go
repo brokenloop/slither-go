@@ -20,7 +20,7 @@ type Coord struct {
 
 type Snake struct {
 	Id, Name string
-	Heath    int
+	Health   int
 	Body     []Coord
 }
 

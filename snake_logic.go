@@ -208,11 +208,15 @@ func FindMove(g GameRequest) string {
 	world := ParseWorldFromRequest(g)
 	foundMove := false
 	move := ""
-	foundMove, move = HungryMove(world, g)
-	if foundMove {
-		return move
+	health := g.You.Health
+	fmt.Println("HEALTH %v", health)
+	if health > 75 {
+		foundMove, move = ScaredyMove(world, g)
+		if foundMove {
+			return move
+		}
 	}
-	foundMove, move = ScaredyMove(world, g)
+	foundMove, move = HungryMove(world, g)
 	if foundMove {
 		return move
 	}
