@@ -80,7 +80,7 @@ func PrintFindMove(f func(...interface{}), g GameRequest) {
 	}
 }
 
-func LastResort(w World) string {
+func LastResort(w World, g GameRequest) string {
 	fmt.Println("\nLAST RESORT")
 	headTile := w.From()
 	head := Coord{
@@ -88,11 +88,23 @@ func LastResort(w World) string {
 		Y: headTile.Y,
 	}
 	neighbors := headTile.PathNeighbors()
+
 	if len(neighbors) > 0 {
-		neighbor := neighbors[0]
-		nT := neighbor.(*Tile)
-		moveCoord := Coord{X: nT.X, Y: nT.Y}
-		move := ParseMove(head, moveCoord)
+		fmt.Println("Possible moves: ", len(neighbors))
+		placeHolder := Coord{}
+		for i := 0; i < len(neighbors); i++ {
+			neighbor := neighbors[i]
+
+			nT := neighbor.(*Tile)
+			moveCoord := Coord{X: nT.X, Y: nT.Y}
+			placeHolder = moveCoord
+			if TileSafe(moveCoord, g) {
+				move := ParseMove(head, moveCoord)
+				return move
+			}
+			fmt.Println("FALLBACK")
+		}
+		move := ParseMove(head, placeHolder)
 		return move
 	}
 	fmt.Println("\nDead end!")
@@ -146,8 +158,6 @@ func HungryMove(world World, g GameRequest) (bool, string) {
 	for i := 0; i < len(foodList); i++ {
 		goalCoord := foodList[i].Loc
 		world.SetGoal(goalCoord)
-		fmt.Println("\n\n\nworld")
-		fmt.Printf(StringifyWorld(world))
 		p, _, found := Path(world.From(), world.To())
 		if found {
 			head := Coord{
@@ -206,11 +216,13 @@ func ScaredyMove(world World, g GameRequest) (bool, string) {
 
 func FindMove(g GameRequest) string {
 	world := ParseWorldFromRequest(g)
+	fmt.Println("\n\n\nworld")
+	fmt.Printf(StringifyWorld(world))
 	foundMove := false
 	move := ""
 	health := g.You.Health
 	fmt.Println("HEALTH %v", health)
-	if health > 30 {
+	if health > 100 {
 		foundMove, move = ScaredyMove(world, g)
 		if foundMove {
 			return move
@@ -220,5 +232,5 @@ func FindMove(g GameRequest) string {
 	if foundMove {
 		return move
 	}
-	return LastResort(world)
+	return LastResort(world, g)
 }
