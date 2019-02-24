@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -18,18 +17,10 @@ func ParseWorldFromRequest(request GameRequest) World {
 		}
 	}
 
+	//blocking snake locations
 	for _, snake := range request.Board.Snakes {
-		fmt.Println(snake)
-		for _, coord := range snake.Body {
-			w.SetTile(&Tile{
-				Kind: KindBlocker,
-			}, coord.Y, coord.X)
-		}
-	}
-
-	// marking body
-	for i, coord := range request.You.Body {
-		if i != 0 {
+		for i := 0; i < len(snake.Body)-1; i++ {
+			coord := snake.Body[i]
 			w.SetTile(&Tile{
 				Kind: KindBlocker,
 			}, coord.Y, coord.X)
@@ -42,20 +33,8 @@ func ParseWorldFromRequest(request GameRequest) World {
 		Kind: KindFrom,
 	}, coord.Y, coord.X)
 
-	// setting goal as first food for testing
-	// goalCoord := request.Board.Food[0]
-	// w.SetTile(&Tile{
-	// 	Kind: KindTo,
-	// }, goalCoord.Y, goalCoord.X)
-
 	return w
 }
-
-// func SetGoal(w *World, g Coord) {
-// 	w.SetTile(&Tile{
-// 		Kind: KindTo,
-// 	}, g.Y, g.X)
-// }
 
 // Sets the tile at g to a goal
 func (w World) SetGoal(g Coord) {
@@ -71,25 +50,8 @@ func (w World) StripGoal(g Coord) {
 	}, g.Y, g.X)
 }
 
-// func ParseMove(head Coord, path []Pather) string {
-
-// 	p := path[len(path)-2]
-// 	pT := p.(*Tile)
-// 	fmt.Println("MOVES")
-// 	fmt.Println(head)
-// 	fmt.Println(pT.X, pT.Y)
-// 	var direction = [2]int{pT.X - head.X, pT.Y - head.Y}
-// 	fmt.Printf("DIRECTION: %v", direction)
-// 	return MoveMap(direction)
-// }
-
 func ParseMove(head Coord, moveCoord Coord) string {
-
-	fmt.Println("\n\nMOVES")
-	fmt.Println(head)
-	fmt.Println(moveCoord.X, moveCoord.Y)
 	var direction = [2]int{moveCoord.X - head.X, moveCoord.Y - head.Y}
-	fmt.Printf("DIRECTION: %v", direction)
 	return MoveMap(direction)
 }
 

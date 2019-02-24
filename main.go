@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -55,7 +56,7 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 
 	// b, err := json.MarshalIndent(input, "", "  ")
 	// fmt.Println(b)
-	spew.Dump(input)
+	// spew.Dump(input)
 
 	response := make(map[string]string)
 
@@ -86,7 +87,8 @@ func EndHandler(w http.ResponseWriter, r *http.Request) {
 
 // main function to boot up everything
 func main() {
-	TestStraightLine()
+	// TestStraightLine()
+
 	router := mux.NewRouter()
 	router.HandleFunc("/", PingHandler).Methods("GET")
 	router.HandleFunc("/start", StartHandler).Methods("POST")
@@ -94,5 +96,7 @@ func main() {
 	router.HandleFunc("/end", EndHandler).Methods("POST")
 	router.HandleFunc("/ping", PingHandler).Methods("GET", "POST")
 
-	log.Fatal(http.ListenAndServe(":8000", router))
+	port := "8000"
+	fmt.Println("Dispensing snakes on port: " + port)
+	log.Fatal(http.ListenAndServe(":"+port, router))
 }

@@ -24,8 +24,8 @@ func FindClosestFood(g GameRequest) Coord {
 			result = food
 		}
 	}
-	fmt.Printf("Shortest distance: %d", shortestDistance)
-	fmt.Printf("Closest food: %d", result)
+	// fmt.Printf("Shortest distance: %d", shortestDistance)
+	// fmt.Printf("Closest food: %d", result)
 	return result
 }
 
@@ -81,8 +81,7 @@ func PrintFindMove(f func(...interface{}), g GameRequest) {
 }
 
 func LastResort(w World) string {
-	fmt.Println("\n\n\nLAST RESORT")
-	// headTile := w[head.Y][head.X]
+	fmt.Println("LAST RESORT")
 	headTile := w.From()
 	head := Coord{
 		X: headTile.X,
@@ -92,16 +91,36 @@ func LastResort(w World) string {
 	if len(neighbors) > 0 {
 		neighbor := neighbors[0]
 		nT := neighbor.(*Tile)
-		// coords are swapped because of world mapping
 		moveCoord := Coord{X: nT.X, Y: nT.Y}
-		fmt.Printf("Head coord: %d\n", head)
-		fmt.Printf("Move coord: %d\n", moveCoord)
-
 		move := ParseMove(head, moveCoord)
 		return move
 	}
 	fmt.Println("\nDead end!")
 	return "right"
+}
+
+func TileSafe(tile Coord, g GameRequest) bool {
+	for i := 0; i < len(g.Board.Snakes); i++ {
+		snake := g.Board.Snakes[i]
+		if snake.Id != g.You.Id {
+			snakeHead := snake.Body[0]
+			snakeHead = FlipCoords(snakeHead)
+			distance := ManhattanDistance(tile, snakeHead)
+			fmt.Printf("\nOpponent snake: %v", snake)
+			fmt.Printf("\nDestination: %v", tile)
+			fmt.Printf("\nOpponent Head: %v", snakeHead)
+			fmt.Printf("\nDistance: %v", distance)
+			if distance <= 1 && len(snake.Body) >= len(g.You.Body) {
+				fmt.Println("\n\nTILE NOT SAFE")
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func FlipCoords(coord Coord) Coord {
+	return Coord{X: coord.Y, Y: coord.X}
 }
 
 func FindMove(g GameRequest) string {
@@ -112,7 +131,7 @@ func FindMove(g GameRequest) string {
 	for i := 0; i < len(foodList); i++ {
 		goalCoord := foodList[i].Loc
 		world.SetGoal(goalCoord)
-		fmt.Println("\nworld")
+		fmt.Println("\n\n\nworld")
 		fmt.Printf(StringifyWorld(world))
 		p, _, found := Path(world.From(), world.To())
 		if found {
@@ -120,12 +139,17 @@ func FindMove(g GameRequest) string {
 				X: world.From().X,
 				Y: world.From().Y,
 			}
+			// if FoodSafe(head, g) {
 			cutPath := p[len(p)-2]
 			moveTile := cutPath.(*Tile)
 			moveCoord := Coord{X: moveTile.X, Y: moveTile.Y}
-			move := ParseMove(head, moveCoord)
-			return move
+			if TileSafe(moveCoord, g) {
+				move := ParseMove(head, moveCoord)
+				return move
+			}
+			// }
 		}
+		world.StripGoal(goalCoord)
 	}
 	return LastResort(world)
 }
