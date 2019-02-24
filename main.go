@@ -1,3 +1,33 @@
+// package main
+
+// import (
+// 	"log"
+// 	"net/http"
+// 	"os"
+
+// 	"github.com/gin-gonic/gin"
+// 	_ "github.com/heroku/x/hmetrics/onload"
+// )
+
+// func main() {
+// 	port := os.Getenv("PORT")
+
+// 	if port == "" {
+// 		log.Fatal("$PORT must be set")
+// 	}
+
+// 	router := gin.New()
+// 	router.Use(gin.Logger())
+// 	router.LoadHTMLGlob("templates/*.tmpl.html")
+// 	router.Static("/static", "static")
+
+// 	router.GET("/", func(c *gin.Context) {
+// 		c.HTML(http.StatusOK, "index.tmpl.html", nil)
+// 	})
+
+// 	router.Run(":" + port)
+// }
+
 package main
 
 import (
@@ -5,6 +35,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
@@ -42,11 +73,13 @@ type GameRequest struct {
 }
 
 func PingHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("PING")
 	returnString := "ssssSSsssSsSSSsssSSSSSssssSSss"
 	json.NewEncoder(w).Encode(returnString)
 }
 
 func StartHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("START")
 	decoder := json.NewDecoder(r.Body)
 	var input GameRequest
 	err := decoder.Decode(&input)
@@ -68,6 +101,7 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func MoveHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("MOVE")
 	decoder := json.NewDecoder(r.Body)
 	var input GameRequest
 	err := decoder.Decode(&input)
@@ -96,7 +130,12 @@ func main() {
 	router.HandleFunc("/end", EndHandler).Methods("POST")
 	router.HandleFunc("/ping", PingHandler).Methods("GET", "POST")
 
-	port := "8000"
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8000"
+	}
+	// port := "8000"
 	fmt.Println("Dispensing snakes on port: " + port)
+	// log.Fatal(http.ListenAndServe(":"+port, router))
 	log.Fatal(http.ListenAndServe(":"+port, router))
 }

@@ -1,1 +1,1 @@
-web: snake-api.exe
+web: go-getting-started
