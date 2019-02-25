@@ -223,8 +223,6 @@ func ScaredyMove(world World, g GameRequest) (bool, string) {
 	if !world.IsEmpty(tail) {
 		return foundMove, ""
 	}
-
-	// tail = FlipCoords(tail)
 	fmt.Printf("TAILCOORD %v", tail)
 	world.SetGoal(tail)
 	fmt.Println()
