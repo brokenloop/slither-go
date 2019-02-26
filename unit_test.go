@@ -244,13 +244,18 @@ func TestMoveSnake(t *testing.T) {
 
 }
 
-func TestRandomMove(t *testing.T) {
-	world := ParseWorldFromRequest(testRequest)
-	t.Log("\n" + StringifyWorld(world))
-	snake := testRequest.You
-	t.Log(snake.Body[0])
-	for i := 0; i < 10; i++ {
-		t.Logf("%v", snake.RandomMove(world))
-	}
+// func TestRandomMove(t *testing.T) {
+// 	world := ParseWorldFromRequest(testRequest)
+// 	t.Log("\n" + StringifyWorld(world))
+// 	snake := testRequest.You
+// 	t.Log(snake.Body[0])
+// 	for i := 0; i < 10; i++ {
+// 		t.Logf("%v", snake.RandomMove(world))
+// 	}
 
+// }
+
+func TestSimulate(t *testing.T) {
+	world := ParseWorldFromRequest(testRequest)
+	Simulate(world, testRequest)
 }
