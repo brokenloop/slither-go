@@ -4,6 +4,19 @@ package main
 // 	g.Board.s
 // }
 
+func DeepCopyWorld(oldWorld World) World {
+	w := World{}
+	for x, row := range oldWorld {
+		for y, tile := range row {
+			kind := tile.Kind
+			w.SetTile(&Tile{
+				Kind: kind,
+			}, y, x)
+		}
+	}
+	return w
+}
+
 func (s Snake) Move(m string) {
 	direction := ParseDirection(m)
 	oldHead := s.Body[0]
@@ -25,4 +38,3 @@ func ParseDirection(m string) [2]int {
 	}
 	return result
 }
- 
