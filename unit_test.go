@@ -30,7 +30,7 @@ var testRequest = GameRequest{
 		Id:     "yousnakeid",
 		Name:   "yousnakename",
 		Health: 100,
-		Body:   []Coord{Coord{X: 0, Y: 0}},
+		Body:   []Coord{Coord{X: 0, Y: 1}},
 	},
 }
 
@@ -206,22 +206,51 @@ func TestDeepCopyWorld(t *testing.T) {
 	world := ParseWorldFromRequest(testRequest)
 	newWorld := DeepCopyWorld(world)
 
-	t.Logf("%v", world[0][0].Kind)
-	t.Logf("%v", newWorld[0][0].Kind)
-
-	if world[0][0].Kind != newWorld[0][0].Kind {
-		t.Error("World hasn't been copied correctly")
+	if world[0][1].Kind != newWorld[0][1].Kind {
+		t.Errorf("World hasn't been copied correctly. Expected %v got %v", world[0][1].Kind, newWorld[0][1].Kind)
 	}
 
 	world.SetTile(&Tile{
-		Kind: KindPlain,
-	}, 0, 0)
+		Kind: KindMountain,
+	}, 0, 1)
 
-	t.Logf("%v", world[0][0].Kind)
-	t.Logf("%v", newWorld[0][0].Kind)
+	t.Log(StringifyWorld(world))
+	t.Log(StringifyWorld(newWorld))
+	if world[0][1].Kind == newWorld[0][1].Kind {
+		t.Errorf("World hasn't been copied correctly. Expected %v got %v", world[0][1].Kind, newWorld[0][1].Kind)
+	}
+}
 
-	if world[0][0].Kind == newWorld[0][0].Kind {
-		t.Error("World hasn't been copied correctly")
+func TestMoveSnake(t *testing.T) {
+	// world := ParseWorldFromRequest(testRequest)
+	snake := testRequest.You
+	snake.Move("down", false)
+	expectedResult := Coord{X: 1, Y: 1}
+	result := snake.Body[0]
+	if result != expectedResult {
+		t.Errorf("Move is broken, expected %v got %v", expectedResult, result)
+	}
+
+	if len(snake.Body) != 1 {
+		t.Error("snake grew and didn't eat")
+	}
+
+	snake.Move("down", true)
+	t.Logf("%v", snake.Body)
+
+	if len(snake.Body) != 2 {
+		t.Error("snake ate and didn't grow")
+	}
+
+}
+
+func TestRandomMove(t *testing.T) {
+	world := ParseWorldFromRequest(testRequest)
+	t.Log("\n" + StringifyWorld(world))
+	snake := testRequest.You
+	t.Log(snake.Body[0])
+	for i := 0; i < 10; i++ {
+		t.Logf("%v", snake.RandomMove(world))
 	}
 
 }
