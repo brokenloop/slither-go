@@ -244,18 +244,32 @@ func TestMoveSnake(t *testing.T) {
 
 }
 
-// func TestRandomMove(t *testing.T) {
-// 	world := ParseWorldFromRequest(testRequest)
-// 	t.Log("\n" + StringifyWorld(world))
-// 	snake := testRequest.You
-// 	t.Log(snake.Body[0])
-// 	for i := 0; i < 10; i++ {
-// 		t.Logf("%v", snake.RandomMove(world))
-// 	}
+func TestRandomMove(t *testing.T) {
+	world := ParseWorldFromRequest(testRequest)
+	t.Log("\n" + StringifyWorld(world))
+	snake := testRequest.You
+	t.Log(snake.Body[0])
+	for i := 0; i < 10; i++ {
+		t.Logf("%v", snake.RandomMove(world))
+	}
+}
 
+// func TestSimulate(t *testing.T) {
+// 	world := ParseWorldFromRequest(testRequest)
+// 	Simulate(world, testRequest)
 // }
 
-func TestSimulate(t *testing.T) {
-	world := ParseWorldFromRequest(testRequest)
-	Simulate(world, testRequest)
+func TestOutOfBounds(t *testing.T) {
+	maxSize := 10
+	testCoords := []Coord{
+		Coord{X: -1, Y: 0},
+		Coord{X: 0, Y: -1},
+		Coord{X: 10, Y: 0},
+		Coord{X: 0, Y: 10},
+	}
+	for i := 0; i < len(testCoords); i++ {
+		if !OutOfBounds(testCoords[i], maxSize) {
+			t.Errorf("Broken! %v", testCoords[i])
+		}
+	}
 }

@@ -109,6 +109,7 @@ func StringifyWorld(w World) string {
 	}
 	for _, v := range w {
 		for _, value := range v {
+			// fmt.Print(value)s
 			testres[value.X] = replaceAtIndex(
 				testres[value.X],
 				KindRunes[value.Kind],

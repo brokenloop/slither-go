@@ -11,12 +11,14 @@ import (
 
 func Simulate(w World, g GameRequest) {
 	for i := 0; i < 10; i++ {
-		for i := 0; i < len(g.Board.Snakes); i++ {
-			g.Board.Snakes[i].Move("up", false)
+		if len(g.Board.Snakes) > 0 {
+			fmt.Println(StringifyWorld(w))
+			for i := 0; i < len(g.Board.Snakes); i++ {
+				g.Board.Snakes[i].Move("up", false)
+			}
+			KillSnakes(w, g)
+			w = ParseWorldFromRequest(g)
 		}
-		KillSnakes(w, g)
-		w = ParseWorldFromRequest(g)
-		fmt.Println(StringifyWorld(w))
 	}
 }
 
@@ -60,7 +62,7 @@ func (s *Snake) RandomMove(w World) string {
 
 	fmt.Print("\n")
 	fmt.Print(moveCoord)
-	move := ParseMove(head, moveCoord)
+	move := InternalParseMove(head, moveCoord)
 	return move
 }
 
@@ -78,7 +80,7 @@ func DeepCopyWorld(oldWorld World) World {
 }
 
 func (s *Snake) Move(m string, eat bool) {
-	direction := ParseDirection(m)
+	direction := InternalParseDirection(m)
 	oldHead := s.Body[0]
 	newHead := Coord{X: oldHead.X + direction[0], Y: oldHead.Y + direction[1]}
 	if eat {
@@ -89,17 +91,38 @@ func (s *Snake) Move(m string, eat bool) {
 
 }
 
-func ParseDirection(m string) [2]int {
+func InternalParseDirection(m string) [2]int {
 	result := [2]int{0, 0}
 	switch m {
-	case "up":
-		result = [2]int{-1, 0}
-	case "down":
-		result = [2]int{1, 0}
 	case "left":
-		result = [2]int{0, -1}
+		result = [2]int{-1, 0}
 	case "right":
+		result = [2]int{1, 0}
+	case "up":
+		result = [2]int{0, -1}
+	case "down":
 		result = [2]int{0, 1}
 	}
 	return result
+}
+
+func InternalParseMove(head Coord, moveCoord Coord) string {
+	var direction = [2]int{moveCoord.X - head.X, moveCoord.Y - head.Y}
+	return InternalMoveMap(direction)
+}
+
+// needs to be tested - what happens if direction is malformed?
+func InternalMoveMap(direction [2]int) string {
+	if direction[0] == 0 {
+		if direction[1] == 1 {
+			return "down"
+		} else if direction[1] == -1 {
+			return "up"
+		}
+	} else if direction[0] == 1 {
+		return "right"
+	} else {
+		return "left"
+	}
+	return "right"
 }
