@@ -29,10 +29,10 @@ func ParseWorldFromRequest(request GameRequest) World {
 	}
 
 	//marking head
-	coord := request.You.Body[0]
-	w.SetTile(&Tile{
-		Kind: KindFrom,
-	}, coord.Y, coord.X)
+	// coord := request.You.Body[0]
+	// w.SetTile(&Tile{
+	// 	Kind: KindFrom,
+	// }, coord.Y, coord.X)
 
 	return w
 }
@@ -41,6 +41,13 @@ func ParseWorldFromRequest(request GameRequest) World {
 func (w World) SetGoal(g Coord) {
 	w.SetTile(&Tile{
 		Kind: KindTo,
+	}, g.Y, g.X)
+}
+
+// Sets the tile at g to a goal
+func (w World) SetHead(g Coord) {
+	w.SetTile(&Tile{
+		Kind: KindFrom,
 	}, g.Y, g.X)
 }
 

@@ -24,6 +24,12 @@ var testRequest = GameRequest{
 				Health: 100,
 				Body:   []Coord{Coord{X: 3, Y: 3}, Coord{X: 3, Y: 2}, Coord{X: 3, Y: 1}},
 			},
+			Snake{
+				Id:     "yousnakeid",
+				Name:   "yousnakename",
+				Health: 100,
+				Body:   []Coord{Coord{X: 0, Y: 1}},
+			},
 		},
 	},
 	You: Snake{
@@ -36,11 +42,12 @@ var testRequest = GameRequest{
 
 func TestParseWorldFromRequest(t *testing.T) {
 	world := ParseWorldFromRequest(testRequest)
+	world.SetHead(testRequest.You.Body[0])
 	fromTile := world.From()
 
 	expectedFrom := testRequest.You.Body[0]
 
-	if fromTile.X != expectedFrom.X || fromTile.Y != expectedFrom.Y {
+	if fromTile.X != expectedFrom.Y || fromTile.Y != expectedFrom.X {
 		t.Errorf("Fromtile incorrectly set. got [%d, %d], wanted [%d, %d]", fromTile.X, fromTile.Y, expectedFrom.X, expectedFrom.Y)
 	}
 	PrintWorld(t.Log, world)
@@ -204,7 +211,7 @@ FX...
 
 func TestDeepCopyWorld(t *testing.T) {
 	world := ParseWorldFromRequest(testRequest)
-	newWorld := DeepCopyWorld(world)
+	newWorld := world.DeepCopyWorld()
 
 	if world[0][1].Kind != newWorld[0][1].Kind {
 		t.Errorf("World hasn't been copied correctly. Expected %v got %v", world[0][1].Kind, newWorld[0][1].Kind)
@@ -225,7 +232,7 @@ func TestMoveSnake(t *testing.T) {
 	// world := ParseWorldFromRequest(testRequest)
 	snake := testRequest.You
 	snake.Move("down", false)
-	expectedResult := Coord{X: 1, Y: 1}
+	expectedResult := Coord{X: 0, Y: 2}
 	result := snake.Body[0]
 	if result != expectedResult {
 		t.Errorf("Move is broken, expected %v got %v", expectedResult, result)
@@ -254,10 +261,10 @@ func TestRandomMove(t *testing.T) {
 	}
 }
 
-// func TestSimulate(t *testing.T) {
-// 	world := ParseWorldFromRequest(testRequest)
-// 	Simulate(world, testRequest)
-// }
+func TestSimulate(t *testing.T) {
+	world := ParseWorldFromRequest(testRequest)
+	Simulate(world, testRequest)
+}
 
 func TestOutOfBounds(t *testing.T) {
 	maxSize := 10
@@ -272,4 +279,115 @@ func TestOutOfBounds(t *testing.T) {
 			t.Errorf("Broken! %v", testCoords[i])
 		}
 	}
+
+	safeCoord := Coord{X: 0, Y: 0}
+	if OutOfBounds(safeCoord, maxSize) {
+		t.Errorf("Broken! %v", safeCoord)
+	}
+}
+
+var deadRequest = GameRequest{
+	Game: Game{
+		Id: "gameid",
+	},
+	Turn: 0,
+	Board: Board{
+		Height: 10,
+		Width:  10,
+		Food:   []Coord{Coord{X: 9, Y: 9}, Coord{X: 0, Y: 5}, Coord{X: 7, Y: 8}},
+		Snakes: []Snake{
+			Snake{
+				Id:     "self-collision",
+				Name:   "",
+				Health: 100,
+				Body:   []Coord{Coord{X: 3, Y: 3}, Coord{X: 3, Y: 3}, Coord{X: 3, Y: 2}},
+			},
+			Snake{
+				Id:     "head on 1",
+				Name:   "",
+				Health: 100,
+				Body:   []Coord{Coord{X: 5, Y: 5}, Coord{X: 5, Y: 4}},
+			},
+			Snake{
+				Id:     "head on 2",
+				Name:   "",
+				Health: 100,
+				Body:   []Coord{Coord{X: 5, Y: 5}, Coord{X: 5, Y: 6}},
+			},
+			Snake{
+				Id:     "head on 3",
+				Name:   "",
+				Health: 100,
+				Body:   []Coord{Coord{X: 5, Y: 5}},
+			},
+			Snake{
+				Id:     "safe",
+				Name:   "",
+				Health: 100,
+				Body:   []Coord{Coord{X: 2, Y: 2}},
+			},
+		},
+	},
+	// You: Snake{
+	// 	Id:     "yousnakeid",
+	// 	Name:   "yousnakename",
+	// 	Health: 100,
+	// 	Body:   []Coord{Coord{X: 0, Y: 1}},
+	// },
+}
+
+func TestKillSnakes(t *testing.T) {
+	world := ParseWorldFromRequest(deadRequest)
+	deadRequest.KillSnakes(world)
+	expectedAlive := 1
+	alive := len(deadRequest.Board.Snakes)
+	if alive != expectedAlive {
+		t.Errorf("Kill broken: expected %v got %v", expectedAlive, alive)
+	}
+	// Simulate(world, testRequest)
+}
+
+var moveSimRequest = GameRequest{
+	Game: Game{
+		Id: "gameid",
+	},
+	Turn: 0,
+	Board: Board{
+		Height: 10,
+		Width:  10,
+		Food:   []Coord{Coord{X: 9, Y: 9}, Coord{X: 0, Y: 5}, Coord{X: 7, Y: 8}},
+		Snakes: []Snake{
+			Snake{
+				Id:     "themsnakeid",
+				Name:   "themsnakename",
+				Health: 100,
+				Body:   []Coord{Coord{X: 3, Y: 3}, Coord{X: 3, Y: 3}, Coord{X: 3, Y: 3}},
+			},
+			Snake{
+				Id:     "yousnakeid",
+				Name:   "yousnakename",
+				Health: 100,
+				Body:   []Coord{Coord{X: 0, Y: 0}, Coord{X: 0, Y: 0}, Coord{X: 0, Y: 0}},
+			},
+		},
+	},
+	You: Snake{
+		Id:     "yousnakeid",
+		Name:   "yousnakename",
+		Health: 100,
+		Body:   []Coord{Coord{X: 0, Y: 0}, Coord{X: 0, Y: 0}, Coord{X: 0, Y: 0}},
+	},
+}
+
+func TestFindMoveSimulation(t *testing.T) {
+	world := ParseWorldFromRequest(moveSimRequest)
+	bestMove := FindMoveSimulation(world, moveSimRequest)
+	t.Log(bestMove)
+	// deadRequest.KillSnakes(world)
+	// expectedAlive := 1
+	// alive := len(deadRequest.Board.Snakes)
+	// if alive != expectedAlive {
+	// 	t.Errorf("Kill broken: expected %v got %v", expectedAlive, alive)
+	// }
+	// Simulate(world, testRequest)
 }

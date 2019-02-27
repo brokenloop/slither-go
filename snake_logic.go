@@ -248,6 +248,7 @@ func ScaredyMove(world World, g GameRequest) (bool, string) {
 
 func FindMove(g GameRequest) string {
 	world := ParseWorldFromRequest(g)
+	world.SetHead(g.You.Body[0])
 	fmt.Println("\n\n\nworld")
 	fmt.Printf(StringifyWorld(world))
 	foundMove := false
@@ -269,4 +270,9 @@ func FindMove(g GameRequest) string {
 	}
 	// is this needed?
 	return LastResort(world, g)
+}
+
+func FindMoveBySimulation(g GameRequest) string {
+	world := ParseWorldFromRequest(g)
+	return FindMoveSimulation(world, g)
 }

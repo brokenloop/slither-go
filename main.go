@@ -101,7 +101,7 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func MoveHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("MOVE")
+	// fmt.Println("MOVE")
 	decoder := json.NewDecoder(r.Body)
 	var input GameRequest
 	err := decoder.Decode(&input)
@@ -109,7 +109,8 @@ func MoveHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	// spew.Dump(input)
-	move := FindMove(input)
+	// move := FindMove(input)
+	move := FindMoveBySimulation(input)
 	spew.Dump(move)
 	response := make(map[string]string)
 	response["move"] = move
