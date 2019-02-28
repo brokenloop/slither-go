@@ -124,11 +124,11 @@ func Simulate2(w World, g GameRequest, myId string, firstMove string) Simulation
 			if eat {
 				g.Board.Snakes[i].Health = 100
 				// might get error if food is last in list - have to keep an eye on this
-				if foodIndex >= len(g.Board.Food) {
-					g.Board.Food = g.Board.Food[:len(g.Board.Food)]
-				} else {
-					g.Board.Food = append(g.Board.Food[:foodIndex], g.Board.Food[foodIndex+1:]...)
-				}
+				// if foodIndex >= len(g.Board.Food) {
+				// 	g.Board.Food = g.Board.Food[:len(g.Board.Food)]
+				// } else {
+				g.Board.Food = append(g.Board.Food[:foodIndex], g.Board.Food[foodIndex+1:]...)
+				// }
 				foodMap = g.MapFood()
 				fmt.Println("\n\nFOOD LEFT")
 				fmt.Println(len(g.Board.Food))

@@ -213,6 +213,9 @@ func HungryMove(world World, g GameRequest, snakeIndex int) (bool, string) {
 		goalCoord := foodList[i].Loc
 		world.SetGoal(goalCoord)
 		world.SetHead(head)
+		if head == goalCoord {
+			continue
+		}
 		// fromTile := world.From()
 		// fmt.Println("fromTile")
 		// fmt.Println(fromTile)

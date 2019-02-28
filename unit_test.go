@@ -383,7 +383,7 @@ var moveSimRequest2 = GameRequest{
 	Board: Board{
 		Height: 5,
 		Width:  5,
-		Food:   []Coord{Coord{X: 0, Y: 0}, Coord{X: 0, Y: 1}},
+		Food:   []Coord{Coord{X: 0, Y: 0}, Coord{X: 0, Y: 1}, Coord{X: 0, Y: 2}},
 		Snakes: []Snake{
 			Snake{
 				Id:     "yousnakeid",
