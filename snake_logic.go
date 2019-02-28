@@ -146,6 +146,24 @@ func TrappingMove(w World, g GameRequest, snakeIndex int, c Coord) bool {
 	return availableSpace < len(g.Board.Snakes[snakeIndex].Body)
 }
 
+func (s *Snake) RandomMove(w World) string {
+	head := s.Body[0]
+	// fmt.Print(w[head.Y][head.X].Kind)
+	neighbors := w[head.Y][head.X].PathNeighbors()
+	if len(neighbors) > 0 {
+
+		neighbor := neighbors[rand.Intn(len(neighbors))]
+		nT := neighbor.(*Tile)
+		moveCoord := Coord{X: nT.Y, Y: nT.X}
+
+		// fmt.Print("\n")
+		// fmt.Print(moveCoord)
+		move := InternalParseMove(head, moveCoord)
+		return move
+	}
+	return "right"
+}
+
 func IdleMove(w World, g GameRequest, snakeIndex int) (bool, string) {
 	fmt.Println("\nIDLE MOVE")
 	headTile := w.From()
@@ -194,6 +212,13 @@ func HungryMove(world World, g GameRequest, snakeIndex int) (bool, string) {
 	for i := 0; i < len(foodList); i++ {
 		goalCoord := foodList[i].Loc
 		world.SetGoal(goalCoord)
+		world.SetHead(head)
+		// fromTile := world.From()
+		// fmt.Println("fromTile")
+		// fmt.Println(fromTile)
+		// toTile := world.To()
+		// fmt.Println("toTile")
+		// fmt.Println(toTile)
 		p, _, found := Path(world.From(), world.To())
 		if found {
 			head := Coord{
@@ -204,13 +229,14 @@ func HungryMove(world World, g GameRequest, snakeIndex int) (bool, string) {
 			moveTile := cutPath.(*Tile)
 			moveCoord := Coord{X: moveTile.X, Y: moveTile.Y}
 			if TileSafe(moveCoord, g, snakeIndex) && !TrappingMove(world, g, snakeIndex, moveCoord) {
-				fmt.Println("SAFE MOVE")
+				// fmt.Println("SAFE MOVE")
 				move := ParseMove(head, moveCoord)
 				foundMove = true
 				return foundMove, move
 			}
 		}
 		world.StripGoal(goalCoord)
+		world.StripHead(head)
 	}
 	return foundMove, ""
 }

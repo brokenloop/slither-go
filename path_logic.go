@@ -51,6 +51,13 @@ func (w World) SetHead(g Coord) {
 	}, g.Y, g.X)
 }
 
+// Sets the tile at g to blocker
+func (w World) StripHead(g Coord) {
+	w.SetTile(&Tile{
+		Kind: KindBlocker,
+	}, g.Y, g.X)
+}
+
 func (w World) IsEmpty(g Coord) bool {
 	return w.Tile(g.Y, g.X).Kind == KindPlain
 }

@@ -109,7 +109,8 @@ func TestManhattanDistance(t *testing.T) {
 
 func TestFindClosestFood(t *testing.T) {
 	expectedResult := testRequest.Board.Food[1]
-	result := FindClosestFood(testRequest)
+	snakeIndex := 0
+	result := FindClosestFood(testRequest, snakeIndex)
 	if result != expectedResult {
 		t.Errorf("Expected %v, got %v", expectedResult, result)
 	}
@@ -261,11 +262,6 @@ func TestRandomMove(t *testing.T) {
 	}
 }
 
-func TestSimulate(t *testing.T) {
-	world := ParseWorldFromRequest(testRequest)
-	Simulate(world, testRequest)
-}
-
 func TestOutOfBounds(t *testing.T) {
 	maxSize := 10
 	testCoords := []Coord{
@@ -387,7 +383,7 @@ var moveSimRequest2 = GameRequest{
 	Board: Board{
 		Height: 5,
 		Width:  5,
-		Food:   []Coord{Coord{X: 0, Y: 0}},
+		Food:   []Coord{Coord{X: 0, Y: 0}, Coord{X: 0, Y: 1}},
 		Snakes: []Snake{
 			Snake{
 				Id:     "yousnakeid",
