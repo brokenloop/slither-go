@@ -11,8 +11,9 @@ type Destination struct {
 	Loc  Coord
 }
 
-func FindClosestFood(g GameRequest) Coord {
-	snakeHead := g.You.Body[0]
+func FindClosestFood(g GameRequest, snakeIndex int) Coord {
+	// snakeHead := g.You.Body[0]
+	snakeHead := g.Board.Snakes[snakeIndex].Body[0]
 	availableFood := g.Board.Food
 	shortestDistance := math.MaxInt32
 	result := Coord{-1, -1}
@@ -80,7 +81,7 @@ func PrintFindMove(f func(...interface{}), g GameRequest) {
 	}
 }
 
-func LastResort(w World, g GameRequest) string {
+func LastResort(w World, g GameRequest, snakeIndex int) string {
 	fmt.Println("\nLAST RESORT")
 	headTile := w.From()
 	head := Coord{
@@ -98,7 +99,7 @@ func LastResort(w World, g GameRequest) string {
 			nT := neighbor.(*Tile)
 			moveCoord := Coord{X: nT.X, Y: nT.Y}
 			placeHolder = moveCoord
-			if TileSafe(moveCoord, g) {
+			if TileSafe(moveCoord, g, snakeIndex) {
 				move := ParseMove(head, moveCoord)
 				return move
 			}
@@ -111,10 +112,10 @@ func LastResort(w World, g GameRequest) string {
 	return "right"
 }
 
-func TileSafe(tile Coord, g GameRequest) bool {
+func TileSafe(tile Coord, g GameRequest, snakeIndex int) bool {
 	for i := 0; i < len(g.Board.Snakes); i++ {
-		snake := g.Board.Snakes[i]
-		if snake.Id != g.You.Id {
+		if i != snakeIndex {
+			snake := g.Board.Snakes[i]
 			snakeHead := snake.Body[0]
 			snakeHead = FlipCoords(snakeHead)
 			distance := ManhattanDistance(tile, snakeHead)
@@ -122,7 +123,7 @@ func TileSafe(tile Coord, g GameRequest) bool {
 			fmt.Printf("\nDestination: %v", tile)
 			fmt.Printf("\nOpponent Head: %v", snakeHead)
 			fmt.Printf("\nDistance: %v", distance)
-			if distance <= 1 && len(snake.Body) >= len(g.You.Body) {
+			if distance <= 1 && len(snake.Body) >= len(g.Board.Snakes[snakeIndex].Body) {
 				fmt.Println("\n\nTILE NOT SAFE")
 				return false
 			}
@@ -135,17 +136,17 @@ func FlipCoords(coord Coord) Coord {
 	return Coord{X: coord.Y, Y: coord.X}
 }
 
-func TrappingMove(w World, g GameRequest, c Coord) bool {
+func TrappingMove(w World, g GameRequest, snakeIndex int, c Coord) bool {
 	flippedC := FlipCoords(c)
 	availableSpace := FloodFill(w, flippedC)
 	// fmt.Println("\nCHECKING FOR TRAPS")
 	// fmt.Println(c)
 	// fmt.Println(availableSpace)
 
-	return availableSpace < len(g.You.Body)
+	return availableSpace < len(g.Board.Snakes[snakeIndex].Body)
 }
 
-func IdleMove(w World, g GameRequest) (bool, string) {
+func IdleMove(w World, g GameRequest, snakeIndex int) (bool, string) {
 	fmt.Println("\nIDLE MOVE")
 	headTile := w.From()
 	head := Coord{
@@ -164,7 +165,7 @@ func IdleMove(w World, g GameRequest) (bool, string) {
 			nT := neighbor.(*Tile)
 			moveCoord := Coord{X: nT.X, Y: nT.Y}
 
-			if TileSafe(moveCoord, g) {
+			if TileSafe(moveCoord, g, snakeIndex) {
 				flippedC := FlipCoords(moveCoord)
 				availableSpace := FloodFill(w, flippedC)
 				fmt.Println("Move: ", moveCoord)
@@ -184,9 +185,10 @@ func IdleMove(w World, g GameRequest) (bool, string) {
 }
 
 // Try to eat food
-func HungryMove(world World, g GameRequest) (bool, string) {
+func HungryMove(world World, g GameRequest, snakeIndex int) (bool, string) {
 	foundMove := false
-	head := g.You.Body[0]
+	// head := g.You.Body[0]
+	head := g.Board.Snakes[snakeIndex].Body[0]
 	foodList := ListFoodDistances(head, g.Board.Food)
 	foodList = SortByDistance(foodList)
 	for i := 0; i < len(foodList); i++ {
@@ -201,7 +203,7 @@ func HungryMove(world World, g GameRequest) (bool, string) {
 			cutPath := p[len(p)-2]
 			moveTile := cutPath.(*Tile)
 			moveCoord := Coord{X: moveTile.X, Y: moveTile.Y}
-			if TileSafe(moveCoord, g) && !TrappingMove(world, g, moveCoord) {
+			if TileSafe(moveCoord, g, snakeIndex) && !TrappingMove(world, g, snakeIndex, moveCoord) {
 				fmt.Println("SAFE MOVE")
 				move := ParseMove(head, moveCoord)
 				foundMove = true
@@ -214,9 +216,10 @@ func HungryMove(world World, g GameRequest) (bool, string) {
 }
 
 // Chase own tail
-func ScaredyMove(world World, g GameRequest) (bool, string) {
+func ScaredyMove(world World, g GameRequest, snakeIndex int) (bool, string) {
 	foundMove := false
-	tail := g.You.Body[len(g.You.Body)-1]
+	// tail := g.You.Body[len(g.You.Body)-1]
+	tail := g.Board.Snakes[snakeIndex].Body[len(g.Board.Snakes[snakeIndex].Body)-1]
 
 	// if head and tail are on same tile, default to something else
 	// only relevent for first move
@@ -237,7 +240,7 @@ func ScaredyMove(world World, g GameRequest) (bool, string) {
 		cutPath := p[len(p)-2]
 		moveTile := cutPath.(*Tile)
 		moveCoord := Coord{X: moveTile.X, Y: moveTile.Y}
-		if TileSafe(moveCoord, g) {
+		if TileSafe(moveCoord, g, snakeIndex) {
 			move := ParseMove(head, moveCoord)
 			foundMove = true
 			return foundMove, move
@@ -246,7 +249,19 @@ func ScaredyMove(world World, g GameRequest) (bool, string) {
 	return foundMove, ""
 }
 
+func FindSnakeIndex(g GameRequest) int {
+	myId := g.You.Id
+	index := -1
+	for i := 0; i < len(g.Board.Snakes); i++ {
+		if g.Board.Snakes[i].Id == myId {
+			index = i
+		}
+	}
+	return index
+}
+
 func FindMove(g GameRequest) string {
+	snakeIndex := FindSnakeIndex(g)
 	world := ParseWorldFromRequest(g)
 	world.SetHead(g.You.Body[0])
 	fmt.Println("\n\n\nworld")
@@ -255,21 +270,21 @@ func FindMove(g GameRequest) string {
 	move := ""
 	health := g.You.Health
 	if health > 50 {
-		foundMove, move = ScaredyMove(world, g)
+		foundMove, move = ScaredyMove(world, g, snakeIndex)
 		if foundMove {
 			return move
 		}
 	}
-	foundMove, move = HungryMove(world, g)
+	foundMove, move = HungryMove(world, g, snakeIndex)
 	if foundMove {
 		return move
 	}
-	foundMove, move = IdleMove(world, g)
+	foundMove, move = IdleMove(world, g, snakeIndex)
 	if foundMove {
 		return move
 	}
 	// is this needed?
-	return LastResort(world, g)
+	return LastResort(world, g, snakeIndex)
 }
 
 func FindMoveBySimulation(g GameRequest) string {
