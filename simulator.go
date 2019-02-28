@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 )
 
 // func (g GameRequest) MoveSnake(s Snake, m string) {
@@ -21,7 +22,7 @@ type SimulationResult struct {
 
 	// cause of death
 	// cause string
-	log string
+	// log string
 }
 
 func FindMoveSimulation(w World, g GameRequest) string {
@@ -30,9 +31,7 @@ func FindMoveSimulation(w World, g GameRequest) string {
 	neighbors := headTile.PathNeighbors()
 	results := []SimulationResult{}
 	for i := 0; i < len(neighbors); i++ {
-		// foodEaten := 0
-		// alive := true
-		gCopy := g
+		gCopy := DeepCopyRequest(g)
 		wCopy := ParseWorldFromRequest(g)
 		myMove := ParseMoveFromNeighbor(headCoord, neighbors[i])
 		if len(myMove) < 0 {
@@ -60,21 +59,12 @@ func FindMoveSimulation(w World, g GameRequest) string {
 	fmt.Println("\n\n" + StringifyWorld(w))
 	fmt.Println(g.You.Name)
 	fmt.Println("RESULT")
-	// fmt.Println(results)
-	fmt.Println(bestResult.alive)
-	fmt.Println(bestResult.moves)
-	fmt.Println(bestResult.move)
-	fmt.Println(bestResult.log)
+	fmt.Println(results)
+	// fmt.Println(bestResult.alive)
+	// fmt.Println(bestResult.moves)
+	// fmt.Println(bestResult.move)
+	fmt.Println(bestResult)
 	return bestResult.move
-}
-
-func (g GameRequest) CopySnake() {
-	myId := g.You.Id
-	for i := 0; i < len(g.Board.Snakes); i++ {
-		if g.Board.Snakes[i].Id == myId {
-			g.Board.Snakes[i] = g.You
-		}
-	}
 }
 
 func ParseMoveFromNeighbor(head Coord, neighbor Pather) string {
@@ -90,39 +80,53 @@ func Simulate2(w World, g GameRequest, myId string, firstMove string) Simulation
 	simulations := ""
 
 	simulations = simulations + "\n" + firstMove
+	simList := strings.Split(StringifyWorld(w), "\n")
 	// fmt.Println(firstMove)
 	// fmt.Println()
 	// fmt.Println(StringifyWorld(w))
-	movesToSimulate := 10
+
+	foodMap := g.MapFood()
+	movesToSimulate := 100
 	for j := 1; j < movesToSimulate+1; j++ {
 
 		// fmt.Println()
 		// fmt.Println(i)
 		// fmt.Println(g)
 		for i := 0; i < len(g.Board.Snakes); i++ {
+			eat := false
 			if g.Board.Snakes[i].Id == myId {
 				// fmt.Println("My Id")
 				// fmt.Println(myId)
-				if i == 0 {
-					g.Board.Snakes[i].Move(firstMove, false)
+				if j == 1 {
+					eat = CheckEat(firstMove, g.Board.Snakes[i].Body[i], foodMap)
+					g.Board.Snakes[i].Move(firstMove, eat)
 				} else {
 					move := g.Board.Snakes[i].RandomMove(w)
 					if move == "" {
 						move = "right"
 					}
-					g.Board.Snakes[i].Move(move, false)
+					eat = CheckEat(move, g.Board.Snakes[i].Body[i], foodMap)
+					g.Board.Snakes[i].Move(move, eat)
 				}
 			} else {
 				move := g.Board.Snakes[i].RandomMove(w)
 				if move == "" {
 					move = "right"
 				}
-				g.Board.Snakes[i].Move(move, false)
+				eat = CheckEat(move, g.Board.Snakes[i].Body[i], foodMap)
+				g.Board.Snakes[i].Move(move, eat)
+			}
+			if eat {
+				g.Board.Snakes[i].Health = 100
+			} else {
+				g.Board.Snakes[i].Health--
 			}
 		}
 		g.KillSnakes(w)
 		w = ParseWorldFromRequest(g)
 		simulations = simulations + "\n\n" + StringifyWorld(w)
+		simList = strings.Split(StringifyWorld(w), "\n")
+		fmt.Println(simList)
 		// fmt.Println(StringifyWorld(w))
 		if !g.SnakeAlive(myId) {
 			fmt.Println("DEAD")
@@ -130,7 +134,7 @@ func Simulate2(w World, g GameRequest, myId string, firstMove string) Simulation
 				alive: false,
 				moves: j,
 				move:  firstMove,
-				log:   simulations,
+				// log:   simulations,
 			}
 		}
 
@@ -139,8 +143,27 @@ func Simulate2(w World, g GameRequest, myId string, firstMove string) Simulation
 		alive: true,
 		moves: movesToSimulate,
 		move:  firstMove,
-		log:   simulations,
+		// log:   simulations,
 	}
+}
+
+func CheckEat(move string, head Coord, foodMap map[string]bool) bool {
+	direction := InternalParseDirection(move)
+	moveCoord := Coord{X: head.X + direction[0], Y: head.Y + direction[1]}
+	coordString := moveCoord.StringifyCoord()
+	if _, isPresent := foodMap[coordString]; isPresent {
+		return true
+	}
+	return false
+}
+
+func (g *GameRequest) MapFood() map[string]bool {
+	food := make(map[string]bool)
+	for i := 0; i < len(g.Board.Food); i++ {
+		foodString := g.Board.Food[0].StringifyCoord()
+		food[foodString] = true
+	}
+	return food
 }
 
 // func InternalMoveToExternal(m string) string {
@@ -200,10 +223,14 @@ func (g *GameRequest) KillSnakes(w World) {
 	for i := 0; i < len(g.Board.Snakes); i++ {
 
 		head := g.Board.Snakes[i].Body[0]
+		if g.Board.Snakes[i].Health <= 0 {
+			fmt.Println("STARVATION")
+			killList[i] = true
+		}
 
 		// checking for head on collisions - have to do this twice to settle snakes of equal size
 		for j := 0; j < 2; j++ {
-			coordString := string([]rune{rune(head.X), rune(head.Y)})
+			coordString := head.StringifyCoord()
 			// fmt.Println("coord string")
 			// fmt.Println(coordString)
 			if _, isPresent := headList[coordString]; isPresent {
@@ -240,6 +267,10 @@ func (g *GameRequest) KillSnakes(w World) {
 	// fmt.Println(headList)
 }
 
+func (c *Coord) StringifyCoord() string {
+	return string([]rune{rune(c.X), rune(c.Y)})
+}
+
 func OutOfBounds(head Coord, size int) bool {
 	return head.X < 0 || head.X >= size || head.Y < 0 || head.Y >= size
 }
@@ -249,6 +280,7 @@ func (s *Snake) RandomMove(w World) string {
 	// fmt.Print(w[head.Y][head.X].Kind)
 	neighbors := w[head.Y][head.X].PathNeighbors()
 	if len(neighbors) > 0 {
+
 		neighbor := neighbors[rand.Intn(len(neighbors))]
 		nT := neighbor.(*Tile)
 		moveCoord := Coord{X: nT.Y, Y: nT.X}
@@ -272,6 +304,53 @@ func (oldWorld World) DeepCopyWorld() World {
 		}
 	}
 	return w
+}
+
+func DeepCopyRequest(g GameRequest) GameRequest {
+	ng := GameRequest{
+		Game:  g.Game,
+		Turn:  g.Turn,
+		You:   DeepCopySnake(g.You),
+		Board: DeepCopyBoard(g.Board),
+	}
+	return ng
+}
+
+func DeepCopySnake(s Snake) Snake {
+	ns := Snake{
+		Id:     s.Id,
+		Name:   s.Name,
+		Health: s.Health,
+		Body:   make([]Coord, len(s.Body)),
+	}
+	for i := 0; i < len(s.Body); i++ {
+		ns.Body[i] = DeepCopyCoord(s.Body[i])
+	}
+	return ns
+}
+
+func DeepCopyBoard(b Board) Board {
+	nb := Board{
+		Height: b.Height,
+		Width:  b.Width,
+		Food:   make([]Coord, len(b.Food)),
+		Snakes: make([]Snake, len(b.Snakes)),
+	}
+	for i := 0; i < len(b.Food); i++ {
+		nb.Food[i] = DeepCopyCoord(b.Food[i])
+	}
+	for i := 0; i < len(b.Snakes); i++ {
+		nb.Snakes[i] = DeepCopySnake(b.Snakes[i])
+	}
+	return nb
+}
+
+func DeepCopyCoord(c Coord) Coord {
+	nc := Coord{
+		X: c.X,
+		Y: c.Y,
+	}
+	return nc
 }
 
 func (s *Snake) Move(m string, eat bool) {

@@ -361,13 +361,13 @@ var moveSimRequest = GameRequest{
 				Id:     "themsnakeid",
 				Name:   "themsnakename",
 				Health: 100,
-				Body:   []Coord{Coord{X: 3, Y: 3}, Coord{X: 3, Y: 3}, Coord{X: 3, Y: 3}},
+				Body:   []Coord{Coord{X: 3, Y: 3}, Coord{X: 3, Y: 4}, Coord{X: 3, Y: 5}},
 			},
 			Snake{
 				Id:     "yousnakeid",
 				Name:   "yousnakename",
 				Health: 100,
-				Body:   []Coord{Coord{X: 0, Y: 0}, Coord{X: 0, Y: 0}, Coord{X: 0, Y: 0}},
+				Body:   []Coord{Coord{X: 0, Y: 1}, Coord{X: 1, Y: 1}, Coord{X: 1, Y: 0}, Coord{X: 2, Y: 0}, Coord{X: 3, Y: 0}},
 			},
 		},
 	},
@@ -375,13 +375,94 @@ var moveSimRequest = GameRequest{
 		Id:     "yousnakeid",
 		Name:   "yousnakename",
 		Health: 100,
-		Body:   []Coord{Coord{X: 0, Y: 0}, Coord{X: 0, Y: 0}, Coord{X: 0, Y: 0}},
+		Body:   []Coord{Coord{X: 0, Y: 1}, Coord{X: 1, Y: 1}, Coord{X: 1, Y: 0}, Coord{X: 2, Y: 0}, Coord{X: 3, Y: 0}},
 	},
 }
 
+var moveSimRequest2 = GameRequest{
+	Game: Game{
+		Id: "gameid",
+	},
+	Turn: 0,
+	Board: Board{
+		Height: 5,
+		Width:  5,
+		Food:   []Coord{Coord{X: 0, Y: 0}},
+		Snakes: []Snake{
+			Snake{
+				Id:     "yousnakeid",
+				Name:   "yousnakename",
+				Health: 100,
+				Body: []Coord{Coord{X: 0, Y: 3},
+					Coord{X: 1, Y: 3},
+					Coord{X: 1, Y: 2},
+					Coord{X: 1, Y: 1},
+					Coord{X: 1, Y: 0},
+					Coord{X: 2, Y: 0},
+					Coord{X: 2, Y: 1},
+					Coord{X: 2, Y: 2},
+					Coord{X: 2, Y: 3},
+					Coord{X: 2, Y: 4},
+					Coord{X: 2, Y: 4},
+					Coord{X: 2, Y: 4},
+					Coord{X: 2, Y: 4},
+					Coord{X: 2, Y: 4},
+					Coord{X: 2, Y: 4}},
+			},
+		},
+	},
+	You: Snake{
+		Id:     "yousnakeid",
+		Name:   "yousnakename",
+		Health: 100,
+		Body: []Coord{Coord{X: 0, Y: 3},
+			Coord{X: 1, Y: 3},
+			Coord{X: 1, Y: 2},
+			Coord{X: 1, Y: 1},
+			Coord{X: 1, Y: 0},
+			Coord{X: 2, Y: 0},
+			Coord{X: 2, Y: 1},
+			Coord{X: 2, Y: 2},
+			Coord{X: 2, Y: 3},
+			Coord{X: 2, Y: 4},
+			Coord{X: 2, Y: 4},
+			Coord{X: 2, Y: 4},
+			Coord{X: 2, Y: 4},
+			Coord{X: 2, Y: 4},
+			Coord{X: 2, Y: 4}},
+	},
+}
+
+// func TestDeepCopyRequest(t *testing.T) {
+// 	original := moveSimRequest
+// 	copy := original.DeepCopyRequest()
+// 	snakes := copy.Board.Snakes
+// 	for i := 0; i < len(snakes); i++ {
+// 		origSnake := original.Board.Snakes[i]
+// 		newSnake := copy.Board.Snakes[i]
+// 		for j := 0; j < len(snakes); j++ {
+// 			c1 := origSnake.Body[i]
+// 			c2 := newSnake.Body[i]
+// 			fmt.Println(c1)
+// 			fmt.Println(c2)
+
+// 		}
+
+// 		fmt.Println(origSnake)
+// 		fmt.Println(newSnake)
+// 	}
+// 	fmt.Println(copy)
+// 	fmt.Println(snakes)
+// 	fmt.Println(original)
+// 	copy.You.Body[0] = Coord{X: 99, Y: 99}
+// 	if copy.You.Body[0] == original.You.Body[0] {
+// 		t.Log("Universal rules broken")
+// 	}
+// }
+
 func TestFindMoveSimulation(t *testing.T) {
-	world := ParseWorldFromRequest(moveSimRequest)
-	bestMove := FindMoveSimulation(world, moveSimRequest)
+	world := ParseWorldFromRequest(moveSimRequest2)
+	bestMove := FindMoveSimulation(world, moveSimRequest2)
 	t.Log(bestMove)
 	// deadRequest.KillSnakes(world)
 	// expectedAlive := 1

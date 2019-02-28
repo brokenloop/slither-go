@@ -34,8 +34,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
@@ -122,6 +124,8 @@ func EndHandler(w http.ResponseWriter, r *http.Request) {
 
 // main function to boot up everything
 func main() {
+	// set the random seed for later use
+	rand.Seed(time.Now().UTC().UnixNano())
 	// TestStraightLine()
 
 	router := mux.NewRouter()
