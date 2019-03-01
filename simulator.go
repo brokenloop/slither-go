@@ -25,14 +25,17 @@ type SimulationResult struct {
 }
 
 func FindMoveSimulation(w World, g GameRequest) string {
-	headCoord := g.You.Body[0]
-	headTile := w[headCoord.Y][headCoord.X]
-	neighbors := headTile.PathNeighbors()
+	myIndex := FindSnakeIndex(g)
+	// headCoord := g.You.Body[0]
+	// headTile := w[headCoord.Y][headCoord.X]
+	// moves := headTile.GetAvailableMoves()
+	allMoves := g.GetAllAvailableMoves(w)
 	results := []SimulationResult{}
-	for i := 0; i < len(neighbors); i++ {
+	// double check that you can index food like this
+	for i := 0; i < len(allMoves[myIndex]); i++ {
 		gCopy := DeepCopyRequest(g)
 		wCopy := ParseWorldFromRequest(g)
-		myMove := ParseMoveFromNeighbor(headCoord, neighbors[i])
+		myMove := allMoves[myIndex][i]
 		if len(myMove) < 0 {
 			fmt.Println("DEAD END")
 			myMove = "left"
@@ -66,6 +69,27 @@ func FindMoveSimulation(w World, g GameRequest) string {
 	return bestResult.move
 }
 
+func (t Tile) GetAvailableMoves() []string {
+	tileCoord := Coord{X: t.Y, Y: t.X}
+	neighbors := t.PathNeighbors()
+
+	moves := make([]string, len(neighbors))
+	for i := 0; i < len(neighbors); i++ {
+		moves[i] = ParseMoveFromNeighbor(tileCoord, neighbors[i])
+	}
+	return moves
+}
+
+func (g GameRequest) GetAllAvailableMoves(w World) [][]string {
+	result := make([][]string, len(g.Board.Snakes))
+	for i := 0; i < len(g.Board.Snakes); i++ {
+		snakeHead := g.Board.Snakes[i].Body[0]
+		snakeHeadTile := w[snakeHead.Y][snakeHead.X]
+		result[i] = snakeHeadTile.GetAvailableMoves()
+	}
+	return result
+}
+
 func ParseMoveFromNeighbor(head Coord, neighbor Pather) string {
 	nT := neighbor.(*Tile)
 	moveCoord := Coord{X: nT.Y, Y: nT.X}
@@ -75,7 +99,6 @@ func ParseMoveFromNeighbor(head Coord, neighbor Pather) string {
 
 func Simulate2(w World, g GameRequest, myId string, firstMove string) SimulationResult {
 	// should this be here?!
-
 	// simulations := ""
 
 	// simulations = simulations + "\n" + firstMove

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"testing"
+	"time"
 )
 
 func Sum(x int, y int) int {
@@ -467,4 +469,26 @@ func TestFindMoveSimulation(t *testing.T) {
 	// 	t.Errorf("Kill broken: expected %v got %v", expectedAlive, alive)
 	// }
 	// Simulate(world, testRequest)
+}
+
+func TestWorldGenTime(t *testing.T) {
+	start := time.Now()
+	newS := GameRequest{}
+	newWorld := World{}
+	for i := 0; i < 100000; i++ {
+		// newS = DeepCopyRequest(moveSimRequest)
+		newWorld = ParseWorldFromRequest(moveSimRequest)
+
+		newS = moveSimRequest
+	}
+
+	fmt.Println(newS)
+	fmt.Println(newWorld)
+	fmt.Println(time.Since(start))
+}
+
+func TestBlah(t *testing.T) {
+	w := ParseWorldFromRequest(moveSimRequest)
+	bestMove := FindMoveSimulation(w, moveSimRequest)
+	fmt.Println(bestMove)
 }
