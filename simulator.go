@@ -35,13 +35,12 @@ type SimulationResult struct {
 // }
 
 func FindMoveSimulation(w World, g GameRequest) string {
+	movesToSimulate := 10
 	myIndex := FindSnakeIndex(g, g.You.Id)
 	// headCoord := g.You.Body[0]
 	// headTile := w[headCoord.Y][headCoord.X]
 	// moves := headTile.GetAvailableMoves()
 	allMoves := g.GetAllAvailableMoves(w)
-	fmt.Println(g)
-	fmt.Println(allMoves)
 	// results := []SimulationResult{}
 	results := make(map[string]map[int](chan SimulationResult))
 	numSnakes := len(g.Board.Snakes)
@@ -77,21 +76,19 @@ func FindMoveSimulation(w World, g GameRequest) string {
 				}
 				numSimulations++
 				simulationId := numSimulations
-				gCopy := DeepCopyRequest(g)
-				wCopy := ParseWorldFromRequest(g)
 
 				if results[myMove] == nil {
 					results[myMove] = make(map[int](chan SimulationResult))
 				}
 				simChannel := make(chan SimulationResult)
 				results[myMove][simulationId] = simChannel
-				go Simulate2(simChannel, simulationId, wCopy, gCopy, g.You.Id, myIndex, precursorMoves)
+				go Simulate2(simChannel, simulationId, w, g, g.You.Id, myIndex, precursorMoves, movesToSimulate)
 			}
 		}
 	}
 
 	var worstResultsPerMove map[string]SimulationResult
-	for i := 0; i < 50; i++ {
+	for i := 0; i < movesToSimulate; i++ {
 		worstResultsPerMove = DecomposeResultsMap(results)
 	}
 	bestResult := ChooseBestResult(worstResultsPerMove)
@@ -195,11 +192,13 @@ func ParseMoveFromNeighbor(head Coord, neighbor Pather) string {
 	return move
 }
 
-func Simulate2(out chan SimulationResult, simulationId int, w World, g GameRequest, myId string, myIndex int, precursorMoves []string) {
+func Simulate2(out chan SimulationResult, simulationId int, originalWorld World, originalRequest GameRequest, myId string, myIndex int, precursorMoves []string, movesToSimulate int) {
 
+	g := DeepCopyRequest(originalRequest)
+	w := ParseWorldFromRequest(originalRequest)
 	foodMap := g.MapFood()
 	foodEaten := 0
-	movesToSimulate := 20
+
 	for j := 1; j < movesToSimulate+1; j++ {
 
 		// fmt.Println()
@@ -213,12 +212,15 @@ func Simulate2(out chan SimulationResult, simulationId int, w World, g GameReque
 			// fmt.Println("HEAD SET")
 			// fmt.Println(head)
 			var move string
-			var found bool
+			// var found bool
 			if j == 1 {
 				move = precursorMoves[i]
 			} else {
-				found, move = HungryMove(w, g, i)
-				if found == false {
+				// found, move = HungryMove(w, g, i)
+				// if found == false {
+				move = g.Board.Snakes[i].RandomMove(w)
+				// }
+				if len(move) >= 0 {
 					move = "right"
 				}
 			}
@@ -237,7 +239,7 @@ func Simulate2(out chan SimulationResult, simulationId int, w World, g GameReque
 			}
 			// w.StripHead(head)
 		}
-		g.KillSnakes(w)
+		g = KillSnakes(g, w)
 		w = ParseWorldFromRequest(g)
 		// simulations = simulations + "\n\n" + StringifyWorld(w)
 		// simList = strings.Split(StringifyWorld(w), "\n")
@@ -284,7 +286,8 @@ func (g *GameRequest) SnakeAlive(id string) bool {
 	return false
 }
 
-func (g *GameRequest) KillSnakes(w World) {
+func KillSnakes(g GameRequest, w World) GameRequest {
+
 	killList := make(map[int]bool)
 	headList := make(map[string][]*Snake)
 	for i := 0; i < len(g.Board.Snakes); i++ {
@@ -314,14 +317,14 @@ func (g *GameRequest) KillSnakes(w World) {
 				len1 := len(s1.Body)
 				len2 := len(s2.Body)
 				if len1 < len2 {
-					index := FindSnakeIndex(*g, s1.Id)
+					index := FindSnakeIndex(g, s1.Id)
 					killList[index] = true
 				} else if len1 > len2 {
-					index := FindSnakeIndex(*g, s2.Id)
+					index := FindSnakeIndex(g, s2.Id)
 					killList[index] = true
 				} else {
-					index1 := FindSnakeIndex(*g, s1.Id)
-					index2 := FindSnakeIndex(*g, s2.Id)
+					index1 := FindSnakeIndex(g, s1.Id)
+					index2 := FindSnakeIndex(g, s2.Id)
 					killList[index1] = true
 					killList[index2] = true
 				}
@@ -329,6 +332,7 @@ func (g *GameRequest) KillSnakes(w World) {
 		}
 	}
 	if len(killList) > 0 {
+		fmt.Println("killSnakes")
 		newSnakeList := []Snake{}
 		for i := 0; i < len(g.Board.Snakes); i++ {
 			// snake isn't in killList
@@ -338,6 +342,7 @@ func (g *GameRequest) KillSnakes(w World) {
 		}
 		g.Board.Snakes = newSnakeList
 	}
+	return g
 	// fmt.Println(headList)
 }
 
