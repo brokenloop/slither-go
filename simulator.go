@@ -35,7 +35,7 @@ type SimulationResult struct {
 // }
 
 func FindMoveSimulation(w World, g GameRequest) string {
-	movesToSimulate := 10
+	movesToSimulate := 100
 	myIndex := FindSnakeIndex(g, g.You.Id)
 	// headCoord := g.You.Body[0]
 	// headTile := w[headCoord.Y][headCoord.X]
@@ -198,6 +198,7 @@ func Simulate2(out chan SimulationResult, simulationId int, originalWorld World,
 	w := ParseWorldFromRequest(originalRequest)
 	foodMap := g.MapFood()
 	foodEaten := 0
+	result := SimulationResult{}
 
 	for j := 1; j < movesToSimulate+1; j++ {
 
@@ -212,14 +213,14 @@ func Simulate2(out chan SimulationResult, simulationId int, originalWorld World,
 			// fmt.Println("HEAD SET")
 			// fmt.Println(head)
 			var move string
-			// var found bool
+			var found bool
 			if j == 1 {
 				move = precursorMoves[i]
 			} else {
-				// found, move = HungryMove(w, g, i)
-				// if found == false {
-				move = g.Board.Snakes[i].RandomMove(w)
-				// }
+				found, move = HungryMove(w, g, i)
+				if found == false {
+					move = g.Board.Snakes[i].RandomMove(w)
+				}
 				if len(move) >= 0 {
 					move = "right"
 				}
@@ -247,14 +248,19 @@ func Simulate2(out chan SimulationResult, simulationId int, originalWorld World,
 		// fmt.Println(StringifyWorld(w))
 
 		// fmt.Println("DEAD")
-		out <- SimulationResult{
-			alive:        g.SnakeAlive(myId),
-			moves:        j,
-			move:         precursorMoves[myIndex],
-			foodEaten:    foodEaten,
-			simulationId: simulationId,
-			// log:   simulations,
+		if g.SnakeAlive(myId) {
+			result = SimulationResult{
+				alive:        true,
+				moves:        j,
+				move:         precursorMoves[myIndex],
+				foodEaten:    foodEaten,
+				simulationId: simulationId,
+				// log:   simulations,
+			}
+		} else {
+			result.alive = false
 		}
+		out <- result
 	}
 }
 
@@ -277,7 +283,7 @@ func (g *GameRequest) MapFood() map[string]int {
 	return food
 }
 
-func (g *GameRequest) SnakeAlive(id string) bool {
+func (g GameRequest) SnakeAlive(id string) bool {
 	for i := 0; i < len(g.Board.Snakes); i++ {
 		if g.Board.Snakes[i].Id == id {
 			return true
@@ -286,8 +292,8 @@ func (g *GameRequest) SnakeAlive(id string) bool {
 	return false
 }
 
-func KillSnakes(g GameRequest, w World) GameRequest {
-
+func KillSnakes(oldG GameRequest, w World) GameRequest {
+	g := DeepCopyRequest(oldG)
 	killList := make(map[int]bool)
 	headList := make(map[string][]*Snake)
 	for i := 0; i < len(g.Board.Snakes); i++ {
@@ -332,7 +338,6 @@ func KillSnakes(g GameRequest, w World) GameRequest {
 		}
 	}
 	if len(killList) > 0 {
-		fmt.Println("killSnakes")
 		newSnakeList := []Snake{}
 		for i := 0; i < len(g.Board.Snakes); i++ {
 			// snake isn't in killList
