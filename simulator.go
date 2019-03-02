@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 )
 
@@ -10,8 +11,10 @@ import (
 // }
 
 type SimulationResult struct {
+	simulationId int
 	// whether the snake is alive at the end of this simulation
-	alive bool
+	alive     bool
+	foodEaten int
 
 	// how many moves the simulation ran
 	moves int
@@ -24,45 +27,91 @@ type SimulationResult struct {
 	// log string
 }
 
+// type CompositeResult struct {
+// 	numDeaths    int
+// 	numMoves     int
+// 	foodEaten    int
+// 	snakesKilled int
+// }
+
 func FindMoveSimulation(w World, g GameRequest) string {
-	myIndex := FindSnakeIndex(g)
+	myIndex := FindSnakeIndex(g, g.You.Id)
 	// headCoord := g.You.Body[0]
 	// headTile := w[headCoord.Y][headCoord.X]
 	// moves := headTile.GetAvailableMoves()
 	allMoves := g.GetAllAvailableMoves(w)
-	results := []SimulationResult{}
+	// results := []SimulationResult{}
+	results := make(map[string]map[int]SimulationResult)
+	numSnakes := len(g.Board.Snakes)
+	numSimulations := 0
 	// double check that you can index food like this
 	for i := 0; i < len(allMoves[myIndex]); i++ {
-		gCopy := DeepCopyRequest(g)
-		wCopy := ParseWorldFromRequest(g)
+
 		myMove := allMoves[myIndex][i]
 		if len(myMove) <= 0 {
-			fmt.Println("DEAD END")
+			// fmt.Println("DEAD END")
 			myMove = "left"
 		}
 		// for each of the enemies possible moves, do a simulation
 		// Doing this should ensure that head to head collisions actually happen in simulations
-		for j := 0; j > 3; j++ {
+		// check max length in moves to prevent uneccesary thread spawning?
+		for j := 0; j < 4; j++ {
+			precursorMoves := make([]string, numSnakes)
+			precursorMoves[myIndex] = myMove
 
+			for k := 0; k < numSnakes; k++ {
+				if k == myIndex {
+					continue
+				}
+				opponentMoves := allMoves[k]
+				var opponentMove string
+				if len(opponentMoves) <= 0 {
+					opponentMove = "right"
+				} else {
+					opponentMove = opponentMoves[j%len(opponentMoves)]
+				}
+				precursorMoves[k] = opponentMove
+			}
+			numSimulations++
+			simulationId := numSimulations
+			gCopy := DeepCopyRequest(g)
+			wCopy := ParseWorldFromRequest(g)
+			result := Simulate2(simulationId, wCopy, gCopy, g.You.Id, myIndex, precursorMoves)
+
+			if results[myMove] == nil {
+				results[myMove] = make(map[int]SimulationResult)
+			}
+			results[myMove][simulationId] = result
 		}
-		result := Simulate2(wCopy, gCopy, g.You.Id, myMove)
-		results = append(results, result)
+
 	}
 
-	// choose best move
-	bestResult := SimulationResult{
-		alive: false,
-		moves: 0,
-		move:  "",
-	}
-	for i := 0; i < len(results); i++ {
-		result := results[i]
-		if result.alive && !bestResult.alive {
-			bestResult = result
-		} else if result.moves > bestResult.moves {
-			bestResult = result
-		}
-	}
+	worstResultsPerMove := DecomposeResultsMap(results)
+	bestResult := ChooseBestResult(worstResultsPerMove)
+	fmt.Println()
+	fmt.Println("Move", g.Turn)
+	fmt.Println(worstResultsPerMove)
+	return bestResult.move
+	// resultMap := make(map[string]CompositeResult)
+	// for i := 0; i < len(results); i++ {
+	// 	result := results[i]
+	// 	resultMap = EvaluateResult(resultMap, result)
+	// }
+
+	// // choose best move
+	// bestResult := SimulationResult{
+	// 	alive: false,
+	// 	moves: 0,
+	// 	move:  "",
+	// }
+	// for i := 0; i < len(results); i++ {
+	// 	result := results[i]
+	// 	if result.alive && !bestResult.alive {
+	// 		bestResult = result
+	// 	} else if result.moves > bestResult.moves {
+	// 		bestResult = result
+	// 	}
+	// }
 	// fmt.Println("\n\n" + StringifyWorld(w))
 	// fmt.Println(g.You.Name)
 	// fmt.Println("RESULT")
@@ -70,9 +119,82 @@ func FindMoveSimulation(w World, g GameRequest) string {
 	// fmt.Println(bestResult.alive)
 	// fmt.Println(bestResult.moves)
 	// fmt.Println(bestResult.move)
-	fmt.Println(bestResult)
-	return bestResult.move
+	// fmt.Println(bestResult)
+	// return bestResult.move
 }
+
+func FirstResultIsBetter(r1 SimulationResult, r2 SimulationResult) bool {
+	// alive
+	// if r1.alive && !r2.alive {
+	// 	return true
+	// } else if !r1.alive && r2.alive {
+	// 	return false
+	// }
+	// if r1.moves > r2.moves {
+	// 	return true
+	// } else if r1.moves < r2.moves {
+	// 	return false
+	// }
+	return ScoreResult(r1) > ScoreResult(r2)
+}
+
+func ScoreResult(r SimulationResult) int {
+	return r.foodEaten*200 + r.moves*150
+}
+
+func DecomposeResultsMap(resultMap map[string]map[int]SimulationResult) map[string]SimulationResult {
+	worstResultPerMove := make(map[string]SimulationResult)
+	for move, _ := range resultMap {
+		worstResult := SimulationResult{
+			alive: true,
+			moves: math.MaxInt32,
+		}
+		for simulationId, _ := range resultMap[move] {
+			result := resultMap[move][simulationId]
+			if FirstResultIsBetter(worstResult, result) {
+				worstResult = result
+			}
+		}
+		worstResultPerMove[move] = worstResult
+	}
+	return worstResultPerMove
+}
+
+func ChooseBestResult(resultMap map[string]SimulationResult) SimulationResult {
+	bestResult := SimulationResult{
+		alive: false,
+		moves: 0,
+	}
+	for move, _ := range resultMap {
+		result := resultMap[move]
+		if !FirstResultIsBetter(bestResult, result) {
+			bestResult = result
+		}
+	}
+	return bestResult
+}
+
+// func ChooseBestResult(resultMap map[string]CompositeResult) string {
+// 	bestResult := CompositeResult{}
+
+// }
+
+// func EvaluateResult(resultMap map[string]CompositeResult, r SimulationResult) map[string]CompositeResult {
+// 	var compositeResult CompositeResult
+// 	value, isPresent := resultMap[r.move]
+// 	if isPresent {
+// 		compositeResult = value
+// 	} else {
+// 		compositeResult = CompositeResult{}
+// 	}
+// 	// compositeResult.foodEaten =  compositeResult.foodEaten + r.
+// 	if !r.alive {
+// 		compositeResult.numDeaths++
+// 	}
+// 	compositeResult.numMoves += r.moves
+// 	resultMap[r.move] = compositeResult
+// 	return resultMap
+// }
 
 func (t Tile) GetAvailableMoves() []string {
 	tileCoord := Coord{X: t.Y, Y: t.X}
@@ -102,7 +224,7 @@ func ParseMoveFromNeighbor(head Coord, neighbor Pather) string {
 	return move
 }
 
-func Simulate2(w World, g GameRequest, myId string, firstMove string) SimulationResult {
+func Simulate2(simulationId int, w World, g GameRequest, myId string, myIndex int, precursorMoves []string) SimulationResult {
 	// should this be here?!
 	// simulations := ""
 
@@ -113,7 +235,8 @@ func Simulate2(w World, g GameRequest, myId string, firstMove string) Simulation
 	// fmt.Println(StringifyWorld(w))
 
 	foodMap := g.MapFood()
-	movesToSimulate := 5
+	foodEaten := 0
+	movesToSimulate := 20
 	for j := 1; j < movesToSimulate+1; j++ {
 
 		// fmt.Println()
@@ -122,44 +245,30 @@ func Simulate2(w World, g GameRequest, myId string, firstMove string) Simulation
 		for i := 0; i < len(g.Board.Snakes); i++ {
 			eat := false
 			foodIndex := -1
-			head := g.Board.Snakes[i].Body[0]
-			w.SetHead(head)
+			// head := g.Board.Snakes[i].Body[0]
+			// w.SetHead(head)
 			// fmt.Println("HEAD SET")
 			// fmt.Println(head)
-			if g.Board.Snakes[i].Id == myId {
-				// fmt.Println("My Id")
-				// fmt.Println(myId)
-				if j == 1 {
-					eat, foodIndex = CheckEat(firstMove, g.Board.Snakes[i].Body[i], foodMap)
-					g.Board.Snakes[i].Move(firstMove, eat)
-				} else {
-					// move := g.Board.Snakes[i].RandomMove(w)
-					found, move := HungryMove(w, g, i)
-					if found == false {
-						move = "right"
-					}
-					eat, foodIndex = CheckEat(move, g.Board.Snakes[i].Body[i], foodMap)
-					g.Board.Snakes[i].Move(move, eat)
-				}
+			var move string
+			var found bool
+			if j == 1 {
+				move = precursorMoves[i]
 			} else {
-				found, move := HungryMove(w, g, i)
+				found, move = HungryMove(w, g, i)
 				if found == false {
 					move = "right"
 				}
-				eat, foodIndex = CheckEat(move, g.Board.Snakes[i].Body[i], foodMap)
-				g.Board.Snakes[i].Move(move, eat)
 			}
+			eat, foodIndex = CheckEat(move, g.Board.Snakes[i].Body[i], foodMap)
+			g.Board.Snakes[i].Move(move, eat)
 			if eat {
+				foodEaten++
 				g.Board.Snakes[i].Health = 100
 				// might get error if food is last in list - have to keep an eye on this
-				// if foodIndex >= len(g.Board.Food) {
-				// 	g.Board.Food = g.Board.Food[:len(g.Board.Food)]
-				// } else {
 				g.Board.Food = append(g.Board.Food[:foodIndex], g.Board.Food[foodIndex+1:]...)
-				// }
 				foodMap = g.MapFood()
-				fmt.Println("\n\nFOOD LEFT")
-				fmt.Println(len(g.Board.Food))
+				// fmt.Println("\n\nFOOD LEFT")
+				// fmt.Println(len(g.Board.Food))
 			} else {
 				g.Board.Snakes[i].Health--
 			}
@@ -172,20 +281,24 @@ func Simulate2(w World, g GameRequest, myId string, firstMove string) Simulation
 		// fmt.Println(simList)
 		// fmt.Println(StringifyWorld(w))
 		if !g.SnakeAlive(myId) {
-			fmt.Println("DEAD")
+			// fmt.Println("DEAD")
 			return SimulationResult{
-				alive: false,
-				moves: j,
-				move:  firstMove,
+				alive:        false,
+				moves:        j,
+				move:         precursorMoves[myIndex],
+				foodEaten:    foodEaten,
+				simulationId: simulationId,
 				// log:   simulations,
 			}
 		}
 
 	}
 	return SimulationResult{
-		alive: true,
-		moves: movesToSimulate,
-		move:  firstMove,
+		alive:        true,
+		moves:        movesToSimulate,
+		move:         precursorMoves[myIndex],
+		foodEaten:    foodEaten,
+		simulationId: simulationId,
 		// log:   simulations,
 	}
 }
@@ -220,39 +333,46 @@ func (g *GameRequest) SnakeAlive(id string) bool {
 
 func (g *GameRequest) KillSnakes(w World) {
 	killList := make(map[int]bool)
-	headList := make(map[string]*Snake)
+	headList := make(map[string][]*Snake)
 	for i := 0; i < len(g.Board.Snakes); i++ {
 
 		head := g.Board.Snakes[i].Body[0]
-		if g.Board.Snakes[i].Health <= 0 {
-			fmt.Println("STARVATION")
-			killList[i] = true
-		}
+		coordString := head.StringifyCoord()
+		// if _, isPresent := headList[coordString]; !isPresent {
+		headList[coordString] = append(headList[coordString], &g.Board.Snakes[i])
+		// }
 
-		// checking for head on collisions - have to do this twice to settle snakes of equal size
-		for j := 0; j < 2; j++ {
-			coordString := head.StringifyCoord()
-			// fmt.Println("coord string")
-			// fmt.Println(coordString)
-			if _, isPresent := headList[coordString]; isPresent {
-				sameSnake := headList[coordString].Id == g.Board.Snakes[i].Id
-				// fmt.Println("Same snake")
-				// fmt.Println(sameSnake)
-				size := len(headList[coordString].Body)
-				if !sameSnake && size >= len(g.Board.Snakes[i].Body) {
-					// fmt.Println("Head on collision")
-					killList[i] = true
-				} else {
-					headList[coordString] = &g.Board.Snakes[i]
-				}
-			} else {
-				headList[coordString] = &g.Board.Snakes[i]
-			}
+		if g.Board.Snakes[i].Health <= 0 {
+			// fmt.Println("STARVATION")
+			killList[i] = true
 		}
 
 		if OutOfBounds(head, g.Board.Width) || w[head.Y][head.X].Kind == KindBlocker {
 			// fmt.Println("Out of bounds!")
 			killList[i] = true
+		}
+	}
+	// head on collisions
+	for coordString, _ := range headList {
+		if len(headList[coordString]) > 1 {
+			for i := 0; i < len(headList[coordString])-1; i++ {
+				s1 := headList[coordString][i]
+				s2 := headList[coordString][i+1]
+				len1 := len(s1.Body)
+				len2 := len(s2.Body)
+				if len1 < len2 {
+					index := FindSnakeIndex(*g, s1.Id)
+					killList[index] = true
+				} else if len1 > len2 {
+					index := FindSnakeIndex(*g, s2.Id)
+					killList[index] = true
+				} else {
+					index1 := FindSnakeIndex(*g, s1.Id)
+					index2 := FindSnakeIndex(*g, s2.Id)
+					killList[index1] = true
+					killList[index2] = true
+				}
+			}
 		}
 	}
 	if len(killList) > 0 {

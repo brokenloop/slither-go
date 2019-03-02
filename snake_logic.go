@@ -278,11 +278,11 @@ func ScaredyMove(world World, g GameRequest, snakeIndex int) (bool, string) {
 	return foundMove, ""
 }
 
-func FindSnakeIndex(g GameRequest) int {
-	myId := g.You.Id
+func FindSnakeIndex(g GameRequest, snakeId string) int {
+
 	index := -1
 	for i := 0; i < len(g.Board.Snakes); i++ {
-		if g.Board.Snakes[i].Id == myId {
+		if g.Board.Snakes[i].Id == snakeId {
 			index = i
 		}
 	}
@@ -290,7 +290,7 @@ func FindSnakeIndex(g GameRequest) int {
 }
 
 func FindMove(g GameRequest) string {
-	snakeIndex := FindSnakeIndex(g)
+	snakeIndex := FindSnakeIndex(g, g.You.Id)
 	world := ParseWorldFromRequest(g)
 	world.SetHead(g.You.Body[0])
 	fmt.Println("\n\n\nworld")

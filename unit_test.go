@@ -492,3 +492,47 @@ func TestBlah(t *testing.T) {
 	bestMove := FindMoveSimulation(w, moveSimRequest)
 	fmt.Println(bestMove)
 }
+
+var multiAgentRequest = GameRequest{
+	Game: Game{
+		Id: "gameid",
+	},
+	Turn: 0,
+	Board: Board{
+		Height: 10,
+		Width:  10,
+		Food:   []Coord{Coord{X: 9, Y: 9}, Coord{X: 0, Y: 5}, Coord{X: 7, Y: 8}},
+		Snakes: []Snake{
+			Snake{
+				Id:     "themsnakeid",
+				Name:   "themsnakename",
+				Health: 100,
+				Body:   []Coord{Coord{X: 3, Y: 3}, Coord{X: 3, Y: 3}, Coord{X: 3, Y: 3}},
+			},
+			Snake{
+				Id:     "themsnakeid2",
+				Name:   "themsnakename2",
+				Health: 100,
+				Body:   []Coord{Coord{X: 0, Y: 3}, Coord{X: 0, Y: 3}, Coord{X: 0, Y: 3}},
+			},
+			Snake{
+				Id:     "yousnakeid",
+				Name:   "yousnakename",
+				Health: 100,
+				Body:   []Coord{Coord{X: 0, Y: 1}, Coord{X: 0, Y: 1}, Coord{X: 0, Y: 1}},
+			},
+		},
+	},
+	You: Snake{
+		Id:     "yousnakeid",
+		Name:   "yousnakename",
+		Health: 100,
+		Body:   []Coord{Coord{X: 0, Y: 1}, Coord{X: 0, Y: 1}, Coord{X: 0, Y: 1}},
+	},
+}
+
+func TestMultiagentSimulation(t *testing.T) {
+	world := ParseWorldFromRequest(multiAgentRequest)
+	bestMove := FindMoveSimulation(world, multiAgentRequest)
+	t.Log(bestMove)
+}
