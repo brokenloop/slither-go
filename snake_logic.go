@@ -82,34 +82,39 @@ func PrintFindMove(f func(...interface{}), g GameRequest) {
 }
 
 func LastResort(w World, g GameRequest, snakeIndex int) string {
-	fmt.Println("\nLAST RESORT")
-	headTile := w.From()
-	head := Coord{
-		X: headTile.X,
-		Y: headTile.Y,
-	}
-	neighbors := headTile.PathNeighbors()
+	// fmt.Println("\nLAST RESORT")
+	// head := g.Board.Snakes[snakeIndex].Body[0]
+	// headTile := w[head.Y][head.X]
+	// // headTile := w.From()
+	// // head := Coord{
+	// // 	X: headTile.X,
+	// // 	Y: headTile.Y,
+	// // }
+	// neighbors := headTile.PathNeighbors()
 
-	if len(neighbors) > 0 {
-		fmt.Println("Possible moves: ", len(neighbors))
-		placeHolder := Coord{}
-		for i := 0; i < len(neighbors); i++ {
-			neighbor := neighbors[i]
+	// if len(neighbors) > 0 {
+	// 	fmt.Println("Possible moves: ", len(neighbors))
+	// 	placeHolder := Coord{}
+	// 	for i := 0; i < len(neighbors); i++ {
+	// 		neighbor := neighbors[i]
 
-			nT := neighbor.(*Tile)
-			moveCoord := Coord{X: nT.X, Y: nT.Y}
-			placeHolder = moveCoord
-			if TileSafe(moveCoord, g, snakeIndex) {
-				move := ParseMove(head, moveCoord)
-				return move
-			}
-			fmt.Println("FALLBACK")
-		}
-		move := ParseMove(head, placeHolder)
-		return move
-	}
-	fmt.Println("\nDead end!")
-	return "right"
+	// 		nT := neighbor.(*Tile)
+	// 		moveCoord := Coord{X: nT.Y, Y: nT.X}
+	// 		placeHolder = moveCoord
+	// 		if TileSafe(moveCoord, g, snakeIndex) {
+	// 			move := ParseMove(head, moveCoord)
+	// 			return move
+	// 		}
+	// 		fmt.Println("FALLBACK")
+	// 	}
+	// 	// flippedHead := FlipCoords(head)
+	// 	flippedPH := FlipCoords(placeHolder)
+	// 	move := ParseMove(head, flippedPH)
+	// 	return move
+	// }
+	// fmt.Println("\nDead end!")
+	// return "right"
+	return g.Board.Snakes[snakeIndex].RandomMove(w)
 }
 
 func TileSafe(tile Coord, g GameRequest, snakeIndex int) bool {
@@ -166,11 +171,13 @@ func (s *Snake) RandomMove(w World) string {
 
 func IdleMove(w World, g GameRequest, snakeIndex int) (bool, string) {
 	fmt.Println("\nIDLE MOVE")
-	headTile := w.From()
-	head := Coord{
-		X: headTile.X,
-		Y: headTile.Y,
-	}
+	head := g.Board.Snakes[snakeIndex].Body[0]
+	headTile := w[head.Y][head.X]
+	// headTile := w.From()
+	// head := Coord{
+	// 	X: headTile.X,
+	// 	Y: headTile.Y,
+	// }
 	neighbors := headTile.PathNeighbors()
 
 	if len(neighbors) > 0 {
@@ -194,8 +201,8 @@ func IdleMove(w World, g GameRequest, snakeIndex int) (bool, string) {
 				}
 			}
 		}
-
-		move := ParseMove(head, bestMove)
+		flippedHead := FlipCoords(head)
+		move := ParseMove(flippedHead, bestMove)
 		return true, move
 	}
 	fmt.Println("DEAD END")

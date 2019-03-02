@@ -45,8 +45,6 @@ func FindMoveSimulation(w World, g GameRequest) string {
 	results := make(map[string]map[int](chan SimulationResult))
 	numSnakes := len(g.Board.Snakes)
 	numSimulations := 0
-	// double check that you can index food like this
-	if len(allMoves) >= myIndex {
 		for i := 0; i < len(allMoves[myIndex]); i++ {
 
 			myMove := allMoves[myIndex][i]
@@ -85,7 +83,6 @@ func FindMoveSimulation(w World, g GameRequest) string {
 				go Simulate2(simChannel, simulationId, w, g, g.You.Id, myIndex, precursorMoves, movesToSimulate)
 			}
 		}
-	}
 
 	var worstResultsPerMove map[string]SimulationResult
 	for i := 0; i < movesToSimulate; i++ {
@@ -98,9 +95,6 @@ func FindMoveSimulation(w World, g GameRequest) string {
 	return bestResult.move
 }
 
-func ConcurrentSimulation(out chan SimulationResult, simulationId int, w World, g GameRequest, myId string, myIndex int, precursorMoves []string) {
-
-}
 
 func FirstResultIsBetter(r1 SimulationResult, r2 SimulationResult) bool {
 	return ScoreResult(r1) > ScoreResult(r2)
@@ -141,28 +135,6 @@ func ChooseBestResult(resultMap map[string]SimulationResult) SimulationResult {
 	}
 	return bestResult
 }
-
-// func ChooseBestResult(resultMap map[string]CompositeResult) string {
-// 	bestResult := CompositeResult{}
-
-// }
-
-// func EvaluateResult(resultMap map[string]CompositeResult, r SimulationResult) map[string]CompositeResult {
-// 	var compositeResult CompositeResult
-// 	value, isPresent := resultMap[r.move]
-// 	if isPresent {
-// 		compositeResult = value
-// 	} else {
-// 		compositeResult = CompositeResult{}
-// 	}
-// 	// compositeResult.foodEaten =  compositeResult.foodEaten + r.
-// 	if !r.alive {
-// 		compositeResult.numDeaths++
-// 	}
-// 	compositeResult.numMoves += r.moves
-// 	resultMap[r.move] = compositeResult
-// 	return resultMap
-// }
 
 func (t Tile) GetAvailableMoves() []string {
 	tileCoord := Coord{X: t.Y, Y: t.X}
@@ -213,14 +185,14 @@ func Simulate2(out chan SimulationResult, simulationId int, originalWorld World,
 			// fmt.Println("HEAD SET")
 			// fmt.Println(head)
 			var move string
-			var found bool
+			// var found bool
 			if j == 1 {
 				move = precursorMoves[i]
 			} else {
-				found, move = HungryMove(w, g, i)
-				if found == false {
+				// found, move = HungryMove(w, g, i)
+				// if found == false {
 					move = g.Board.Snakes[i].RandomMove(w)
-				}
+				// }
 				if len(move) >= 0 {
 					move = "right"
 				}

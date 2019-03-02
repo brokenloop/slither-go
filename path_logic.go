@@ -3,6 +3,7 @@ package main
 import (
 	"strconv"
 	"strings"
+	"fmt"
 )
 
 // Have to encode the world using {y, x} because requests come in the opposite orientation
@@ -17,6 +18,26 @@ func ParseWorldFromRequest(request GameRequest) World {
 			}, y, x)
 		}
 	}
+
+	//setting movement restrictions around snake bodies
+	for _, snake := range request.Board.Snakes {
+		if snake.Id !=request.You.Id {
+			for i := 0; i < len(snake.Body)-1; i++ {
+				coord := snake.Body[i]
+				w.SetSurroundingTiles(KindMountain, coord.Y, coord.X)
+			}
+		}
+	}
+
+		// //setting movement restrictions around snake heads
+		// for _, snake := range request.Board.Snakes {
+		// 	if snake.Id !=request.You.Id {
+		// 			coord := snake.Body[0]
+		// 			w.SetSurroundingTiles(KindMountain, coord.Y, coord.X)
+		// 	}
+		// }
+
+	//setting extra restriction around snake heads
 
 	//blocking snake locations
 	for _, snake := range request.Board.Snakes {
@@ -35,6 +56,21 @@ func ParseWorldFromRequest(request GameRequest) World {
 	// }, coord.Y, coord.X)
 
 	return w
+}
+
+
+func (w World) SetSurroundingTiles(tileType, x, y int) {
+	for i := -1; i < 2; i++ {
+		for j := -1; j < 2; j++ {
+			newX := x + i
+			newY := y + j
+			if newX >= 0 && newY >= 0 && newX < len(w) && newY < len(w) {
+				w.SetTile(&Tile{
+					Kind: tileType,
+				}, x + i, y + j) 
+			}
+		}
+	}
 }
 
 // Sets the tile at g to a goal
@@ -70,6 +106,9 @@ func (w World) StripGoal(g Coord) {
 }
 
 func ParseMove(head Coord, moveCoord Coord) string {
+	fmt.Println("Move Parse")
+	fmt.Println(head)
+	fmt.Println(moveCoord)
 	var direction = [2]int{moveCoord.X - head.X, moveCoord.Y - head.Y}
 	return MoveMap(direction)
 }

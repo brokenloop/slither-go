@@ -336,7 +336,7 @@ var deadRequest = GameRequest{
 
 func TestKillSnakes(t *testing.T) {
 	world := ParseWorldFromRequest(deadRequest)
-	deadRequest.KillSnakes(world)
+	KillSnakes(deadRequest, world)
 	expectedAlive := 1
 	alive := len(deadRequest.Board.Snakes)
 	if alive != expectedAlive {
@@ -535,4 +535,15 @@ func TestMultiagentSimulation(t *testing.T) {
 	world := ParseWorldFromRequest(multiAgentRequest)
 	bestMove := FindMoveSimulation(world, multiAgentRequest)
 	t.Log(bestMove)
+}
+
+func TestSetSurroundingTiles(t *testing.T) {
+	w := ParseWorldFromRequest(testRequest)
+
+	stringifiedWorld := StringifyWorld(w)
+
+	// w.SetSurroundingTiles(KindRiver, 4, 4)
+	// stringifiedWorld = StringifyWorld(w)
+
+	fmt.Println(stringifiedWorld)
 }

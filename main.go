@@ -111,8 +111,8 @@ func MoveHandler(w http.ResponseWriter, r *http.Request) {
 	// 	panic(err)
 	// }
 	// spew.Dump(input)
-	// move := FindMove(input)
-	move := FindMoveBySimulation(input)
+	move := FindMove(input)
+	// move := FindMoveBySimulation(input)
 	spew.Dump(move)
 	response := make(map[string]string)
 	response["move"] = move
