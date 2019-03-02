@@ -24,18 +24,18 @@ func ParseWorldFromRequest(request GameRequest) World {
 		if snake.Id !=request.You.Id {
 			for i := 0; i < len(snake.Body)-1; i++ {
 				coord := snake.Body[i]
-				w.SetSurroundingTiles(KindMountain, coord.Y, coord.X)
+				w.SetSurroundingTiles(KindMountain, 1, coord.Y, coord.X)
 			}
 		}
 	}
 
-		// //setting movement restrictions around snake heads
-		// for _, snake := range request.Board.Snakes {
-		// 	if snake.Id !=request.You.Id {
-		// 			coord := snake.Body[0]
-		// 			w.SetSurroundingTiles(KindMountain, coord.Y, coord.X)
-		// 	}
-		// }
+		//setting movement restrictions around snake heads
+		for _, snake := range request.Board.Snakes {
+			if snake.Id !=request.You.Id {
+					coord := snake.Body[0]
+					w.SetSurroundingTiles(KindMountain, 2, coord.Y, coord.X)
+			}
+		}
 
 	//setting extra restriction around snake heads
 
@@ -59,9 +59,9 @@ func ParseWorldFromRequest(request GameRequest) World {
 }
 
 
-func (w World) SetSurroundingTiles(tileType, x, y int) {
+func (w World) SetSurroundingTiles(tileType, distance, x, y int) {
 	for i := -1; i < 2; i++ {
-		for j := -1; j < 2; j++ {
+		for j := -distance; j < distance + 1; j++ {
 			newX := x + i
 			newY := y + j
 			if newX >= 0 && newY >= 0 && newX < len(w) && newY < len(w) {
