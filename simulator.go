@@ -36,9 +36,14 @@ func FindMoveSimulation(w World, g GameRequest) string {
 		gCopy := DeepCopyRequest(g)
 		wCopy := ParseWorldFromRequest(g)
 		myMove := allMoves[myIndex][i]
-		if len(myMove) < 0 {
+		if len(myMove) <= 0 {
 			fmt.Println("DEAD END")
 			myMove = "left"
+		}
+		// for each of the enemies possible moves, do a simulation
+		// Doing this should ensure that head to head collisions actually happen in simulations
+		for j := 0; j > 3; j++ {
+
 		}
 		result := Simulate2(wCopy, gCopy, g.You.Id, myMove)
 		results = append(results, result)
