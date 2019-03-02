@@ -106,10 +106,10 @@ func MoveHandler(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println("MOVE")
 	decoder := json.NewDecoder(r.Body)
 	var input GameRequest
-	err := decoder.Decode(&input)
-	if err != nil {
-		panic(err)
-	}
+	decoder.Decode(&input)
+	// if err != nil {
+	// 	panic(err)
+	// }
 	// spew.Dump(input)
 	// move := FindMove(input)
 	move := FindMoveBySimulation(input)

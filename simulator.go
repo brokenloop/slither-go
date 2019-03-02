@@ -40,101 +40,72 @@ func FindMoveSimulation(w World, g GameRequest) string {
 	// headTile := w[headCoord.Y][headCoord.X]
 	// moves := headTile.GetAvailableMoves()
 	allMoves := g.GetAllAvailableMoves(w)
+	fmt.Println(g)
+	fmt.Println(allMoves)
 	// results := []SimulationResult{}
-	results := make(map[string]map[int]SimulationResult)
+	results := make(map[string]map[int](chan SimulationResult))
 	numSnakes := len(g.Board.Snakes)
 	numSimulations := 0
 	// double check that you can index food like this
-	for i := 0; i < len(allMoves[myIndex]); i++ {
+	if len(allMoves) >= myIndex {
+		for i := 0; i < len(allMoves[myIndex]); i++ {
 
-		myMove := allMoves[myIndex][i]
-		if len(myMove) <= 0 {
-			// fmt.Println("DEAD END")
-			myMove = "left"
-		}
-		// for each of the enemies possible moves, do a simulation
-		// Doing this should ensure that head to head collisions actually happen in simulations
-		// check max length in moves to prevent uneccesary thread spawning?
-		for j := 0; j < 4; j++ {
-			precursorMoves := make([]string, numSnakes)
-			precursorMoves[myIndex] = myMove
-
-			for k := 0; k < numSnakes; k++ {
-				if k == myIndex {
-					continue
-				}
-				opponentMoves := allMoves[k]
-				var opponentMove string
-				if len(opponentMoves) <= 0 {
-					opponentMove = "right"
-				} else {
-					opponentMove = opponentMoves[j%len(opponentMoves)]
-				}
-				precursorMoves[k] = opponentMove
+			myMove := allMoves[myIndex][i]
+			if len(myMove) <= 0 {
+				// fmt.Println("DEAD END")
+				myMove = "left"
 			}
-			numSimulations++
-			simulationId := numSimulations
-			gCopy := DeepCopyRequest(g)
-			wCopy := ParseWorldFromRequest(g)
-			result := Simulate2(simulationId, wCopy, gCopy, g.You.Id, myIndex, precursorMoves)
+			// for each of the enemies possible moves, do a simulation
+			// Doing this should ensure that head to head collisions actually happen in simulations
+			// check max length in moves to prevent uneccesary thread spawning?
+			for j := 0; j < 4; j++ {
+				precursorMoves := make([]string, numSnakes)
+				precursorMoves[myIndex] = myMove
 
-			if results[myMove] == nil {
-				results[myMove] = make(map[int]SimulationResult)
+				for k := 0; k < numSnakes; k++ {
+					if k == myIndex {
+						continue
+					}
+					opponentMoves := allMoves[k]
+					var opponentMove string
+					if len(opponentMoves) <= 0 {
+						opponentMove = "right"
+					} else {
+						opponentMove = opponentMoves[j%len(opponentMoves)]
+					}
+					precursorMoves[k] = opponentMove
+				}
+				numSimulations++
+				simulationId := numSimulations
+				gCopy := DeepCopyRequest(g)
+				wCopy := ParseWorldFromRequest(g)
+
+				if results[myMove] == nil {
+					results[myMove] = make(map[int](chan SimulationResult))
+				}
+				simChannel := make(chan SimulationResult)
+				results[myMove][simulationId] = simChannel
+				go Simulate2(simChannel, simulationId, wCopy, gCopy, g.You.Id, myIndex, precursorMoves)
 			}
-			results[myMove][simulationId] = result
 		}
-
 	}
 
-	worstResultsPerMove := DecomposeResultsMap(results)
+	var worstResultsPerMove map[string]SimulationResult
+	for i := 0; i < 50; i++ {
+		worstResultsPerMove = DecomposeResultsMap(results)
+	}
 	bestResult := ChooseBestResult(worstResultsPerMove)
 	fmt.Println()
 	fmt.Println("Move", g.Turn)
 	fmt.Println(worstResultsPerMove)
 	return bestResult.move
-	// resultMap := make(map[string]CompositeResult)
-	// for i := 0; i < len(results); i++ {
-	// 	result := results[i]
-	// 	resultMap = EvaluateResult(resultMap, result)
-	// }
+}
 
-	// // choose best move
-	// bestResult := SimulationResult{
-	// 	alive: false,
-	// 	moves: 0,
-	// 	move:  "",
-	// }
-	// for i := 0; i < len(results); i++ {
-	// 	result := results[i]
-	// 	if result.alive && !bestResult.alive {
-	// 		bestResult = result
-	// 	} else if result.moves > bestResult.moves {
-	// 		bestResult = result
-	// 	}
-	// }
-	// fmt.Println("\n\n" + StringifyWorld(w))
-	// fmt.Println(g.You.Name)
-	// fmt.Println("RESULT")
-	// fmt.Println(results)
-	// fmt.Println(bestResult.alive)
-	// fmt.Println(bestResult.moves)
-	// fmt.Println(bestResult.move)
-	// fmt.Println(bestResult)
-	// return bestResult.move
+func ConcurrentSimulation(out chan SimulationResult, simulationId int, w World, g GameRequest, myId string, myIndex int, precursorMoves []string) {
+
 }
 
 func FirstResultIsBetter(r1 SimulationResult, r2 SimulationResult) bool {
-	// alive
-	// if r1.alive && !r2.alive {
-	// 	return true
-	// } else if !r1.alive && r2.alive {
-	// 	return false
-	// }
-	// if r1.moves > r2.moves {
-	// 	return true
-	// } else if r1.moves < r2.moves {
-	// 	return false
-	// }
 	return ScoreResult(r1) > ScoreResult(r2)
 }
 
@@ -142,7 +113,7 @@ func ScoreResult(r SimulationResult) int {
 	return r.foodEaten*200 + r.moves*150
 }
 
-func DecomposeResultsMap(resultMap map[string]map[int]SimulationResult) map[string]SimulationResult {
+func DecomposeResultsMap(resultMap map[string]map[int](chan SimulationResult)) map[string]SimulationResult {
 	worstResultPerMove := make(map[string]SimulationResult)
 	for move, _ := range resultMap {
 		worstResult := SimulationResult{
@@ -150,7 +121,7 @@ func DecomposeResultsMap(resultMap map[string]map[int]SimulationResult) map[stri
 			moves: math.MaxInt32,
 		}
 		for simulationId, _ := range resultMap[move] {
-			result := resultMap[move][simulationId]
+			result := <-resultMap[move][simulationId]
 			if FirstResultIsBetter(worstResult, result) {
 				worstResult = result
 			}
@@ -224,15 +195,7 @@ func ParseMoveFromNeighbor(head Coord, neighbor Pather) string {
 	return move
 }
 
-func Simulate2(simulationId int, w World, g GameRequest, myId string, myIndex int, precursorMoves []string) SimulationResult {
-	// should this be here?!
-	// simulations := ""
-
-	// simulations = simulations + "\n" + firstMove
-	// simList := strings.Split(StringifyWorld(w), "\n")
-	// fmt.Println(firstMove)
-	// fmt.Println()
-	// fmt.Println(StringifyWorld(w))
+func Simulate2(out chan SimulationResult, simulationId int, w World, g GameRequest, myId string, myIndex int, precursorMoves []string) {
 
 	foodMap := g.MapFood()
 	foodEaten := 0
@@ -280,26 +243,16 @@ func Simulate2(simulationId int, w World, g GameRequest, myId string, myIndex in
 		// simList = strings.Split(StringifyWorld(w), "\n")
 		// fmt.Println(simList)
 		// fmt.Println(StringifyWorld(w))
-		if !g.SnakeAlive(myId) {
-			// fmt.Println("DEAD")
-			return SimulationResult{
-				alive:        false,
-				moves:        j,
-				move:         precursorMoves[myIndex],
-				foodEaten:    foodEaten,
-				simulationId: simulationId,
-				// log:   simulations,
-			}
-		}
 
-	}
-	return SimulationResult{
-		alive:        true,
-		moves:        movesToSimulate,
-		move:         precursorMoves[myIndex],
-		foodEaten:    foodEaten,
-		simulationId: simulationId,
-		// log:   simulations,
+		// fmt.Println("DEAD")
+		out <- SimulationResult{
+			alive:        g.SnakeAlive(myId),
+			moves:        j,
+			move:         precursorMoves[myIndex],
+			foodEaten:    foodEaten,
+			simulationId: simulationId,
+			// log:   simulations,
+		}
 	}
 }
 
